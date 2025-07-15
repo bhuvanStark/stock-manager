@@ -1,1 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stock Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Welcome to Stock Manager</h2>
+    <button onclick="logout()">Logout</button>
+
+    <h3>Add / Update Product</h3>
+    <input type="text" id="productName" placeholder="Product name"><br>
+    <input type="number" id="productQty" placeholder="Quantity"><br>
+    <button onclick="addOrUpdateProduct()">Add / Update</button>
+
+    <h3>All Products</h3>
+    <ul id="productList"></ul>
+
+    <h3>Remove Product</h3>
+    <input type="text" id="removeName" placeholder="Product name to remove"><br>
+    <input type="number" id="removeQty" placeholder="Quantity to remove"><br>
+    <input type="text" id="takenBy" placeholder="Name of person taking it"><br>
+    <button onclick="removeProduct()">Remove</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
 
