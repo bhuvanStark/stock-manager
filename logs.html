@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stock Logs</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Stock Removal Logs</h2>
+    <button onclick="logout()">Logout</button>
+    <ul id="logList"></ul>
+  </div>
+
+  <script>
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        loadLogs();
+      }
+    });
+
+    const db = firebase.database();
+
+    function loadLogs() {
+      db.ref("logs").on("value", snapshot => {
+        const logList = document.getElementById("logList");
+        logList.innerHTML = "";
+
+        const data = snapshot.val();
+        if (data) {
+          const entries = Object.values(data).reverse(); // Latest on top
+          entries.forEach(log => {
+            const li = document.createElement("li");
+            li.textContent = `${log.timestamp}: ${log.takenBy} took ${log.quantityRemoved} of "${log.product}"`;
+            logList.appendChild(li);
+          });
+        } else {
+          logList.innerHTML = "<li>No logs found</li>";
+        }
+      });
+    }
+
+    function logout() {
+      firebase.auth().signOut().then(() => {
+        window.location.href = "login.html";
+      });
+    }
+  </script>
+</body>
+</html>
