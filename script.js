@@ -72,19 +72,36 @@ function removeProduct() {
   const name = document.getElementById("removeName").value.trim();
   const qty = parseInt(document.getElementById("removeQty").value);
   const takenBy = document.getElementById("takenBy").value.trim();
+  const status = document.getElementById("remove-status");
+  status.textContent = "";
 
-  if (!name || isNaN(qty) || !takenBy) {
-    alert("Please fill in product name, quantity, and person name.");
+  if (!name) {
+    status.textContent = "Enter product name.";
     return;
   }
 
+  if (isNaN(qty) || qty <= 0) {
+    status.textContent = "Enter a valid quantity to remove.";
+    return;
+  }
+
+  if (!takenBy) {
+    status.textContent = "Please enter who is taking the item.";
+    return;
+  }
+
+  // Confirm before proceeding
+  const confirmRemove = confirm(`Are you sure you want to remove ${qty} of "${name}"?`);
+  if (!confirmRemove) return;
+
+  // Proceed with stock deduction and log
   db.ref(`products/${name}`).once("value").then(snapshot => {
     const currentQty = snapshot.val();
 
     if (currentQty === null) {
-      alert("Product not found.");
+      status.textContent = "Product not found.";
     } else if (currentQty < qty) {
-      alert("Not enough stock to remove.");
+      status.textContent = "Not enough stock to remove.";
     } else {
       // Update stock
       db.ref(`products/${name}`).set(currentQty - qty);
@@ -98,9 +115,11 @@ function removeProduct() {
       };
 
       db.ref("logs").push(logEntry);
+      status.textContent = "Stock removed and logged.";
     }
   });
 
+  // Clear fields
   document.getElementById("removeName").value = "";
   document.getElementById("removeQty").value = "";
   document.getElementById("takenBy").value = "";
