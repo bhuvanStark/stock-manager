@@ -38,14 +38,25 @@ function addOrUpdateProduct() {
     return;
   }
 
-  db.ref(`products/${name}`).once("value").then(snapshot => {
-    const currentQty = snapshot.val() || 0;
-    db.ref(`products/${name}`).set(currentQty + qty);
+  const productRef = db.ref(`products/${name}`);
+
+  productRef.once("value").then(snapshot => {
+    if (snapshot.exists()) {
+      const confirmUpdate = confirm(
+        `"${name}" already exists with quantity ${snapshot.val()}. Do you want to add ${qty} more?`
+      );
+      if (confirmUpdate) {
+        productRef.set(snapshot.val() + qty);
+      }
+    } else {
+      productRef.set(qty);
+    }
   });
 
   document.getElementById("productName").value = "";
   document.getElementById("productQty").value = "";
 }
+
 
 // Remove stock and log action
 function removeProduct() {
