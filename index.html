@@ -14,6 +14,7 @@
     <button onclick="logout()">Logout</button>
 
     <h3>Add / Update Product</h3>
+    <p id="add-status" style="color: red;"></p>
     <input type="text" id="productName" placeholder="Product name"><br>
     <input type="number" id="productQty" placeholder="Quantity"><br>
     <button onclick="addOrUpdateProduct()">Add / Update</button>
@@ -22,6 +23,7 @@
     <ul id="productList"></ul>
 
     <h3>Remove Product</h3>
+    <p id="remove-status" style="color: red;"></p>
     <input type="text" id="removeName" placeholder="Product name to remove"><br>
     <input type="number" id="removeQty" placeholder="Quantity to remove"><br>
     <input type="text" id="takenBy" placeholder="Name of person taking it"><br>
