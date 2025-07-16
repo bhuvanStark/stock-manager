@@ -61,6 +61,7 @@ function setupSearch(data) {
 function addOrUpdateProduct() {
   const name = document.getElementById("productName").value.trim();
   const qty = parseInt(document.getElementById("productQty").value);
+  const addedBy = document.getElementById("addedBy").value.trim();
   const status = document.getElementById("add-status");
   status.textContent = "";
 
@@ -74,10 +75,15 @@ function addOrUpdateProduct() {
     return;
   }
 
+  if (!addedBy) {
+    status.textContent = "Please enter who is adding the product.";
+    return;
+  }
+
   const productRef = db.ref(`products/${name}`);
 
-  productRef.transaction(current => {
-    return (current || 0) + qty;
+  productRef.transaction(currentQty => {
+    return (currentQty || 0) + qty;
   }, (error, committed, snapshot) => {
     if (error) {
       status.textContent = "Error updating product. Try again.";
@@ -85,11 +91,23 @@ function addOrUpdateProduct() {
       status.textContent = "Update not committed.";
     } else {
       status.textContent = `✔️ Product updated. New quantity: ${snapshot.val()}`;
+
+      // Add log for the addition
+      const logEntry = {
+        product: name,
+        quantityAdded: qty,
+        addedBy: addedBy,
+        timestamp: new Date().toISOString(),
+        action: "added"
+      };
+      db.ref("logs").push(logEntry);
     }
   });
 
+  // Clear fields
   document.getElementById("productName").value = "";
   document.getElementById("productQty").value = "";
+  document.getElementById("addedBy").value = "";
 }
 
 // Remove stock and log action
