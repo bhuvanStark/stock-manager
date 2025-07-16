@@ -1,27 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Register | Stock Manager</title>
-  <link rel="stylesheet" href="style.css">
-
-  <!-- Load Firebase (v10 Global Style) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
-<script src="firebase-config.js"></script>
-<script src="script.js"></script>
-
-
+  <title>Register</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="firebase-config.js"></script>
 </head>
 <body>
   <div class="container">
-    <h2>Create Account</h2>
-    <input type="email" id="email" placeholder="Enter email"><br>
-    <input type="password" id="password" placeholder="Enter password"><br>
+    <h2>Register</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
     <button onclick="register()">Register</button>
-    <p>Already have an account? <a href="login.html">Login here</a></p>
-    <p id="register-status" style="color:red;"></p>
+    <p>Already have an account? <a href="login.html">Login</a></p>
+    <p id="register-status"></p>
   </div>
 
   <script>
@@ -30,12 +23,8 @@
       const password = document.getElementById("password").value;
 
       firebase.auth().createUserWithEmailAndPassword(email, password)
-        .then(() => {
-          window.location.href = "index.html";
-        })
-        .catch(error => {
-          document.getElementById("register-status").innerText = error.message;
-        });
+        .then(() => window.location.href = "index.html")
+        .catch(err => document.getElementById("register-status").textContent = err.message);
     }
   </script>
 </body>
