@@ -2,62 +2,46 @@
 <html>
 <head>
   <title>Stock Logs</title>
-  <link rel="stylesheet" href="style.css">
-
-  <!-- Load Firebase (v10 Global Style) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
-<script src="firebase-config.js"></script>
-<script src="script.js"></script>
-
-
-
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
 </head>
 <body>
   <div class="container">
-    <h2>Stock Removal Logs</h2>
+    <h2>Stock Logs</h2>
     <button onclick="logout()">Logout</button>
     <ul id="logList"></ul>
   </div>
 
   <script>
     firebase.auth().onAuthStateChanged(user => {
-      if (!user) {
-        window.location.href = "login.html";
-      } else {
-        loadLogs();
-      }
+      if (!user) window.location.href = "login.html";
+      else loadLogs();
     });
 
     function loadLogs() {
       firebase.database().ref("logs").on("value", snapshot => {
         const logList = document.getElementById("logList");
         logList.innerHTML = "";
-
         const data = snapshot.val();
+
         if (data) {
-          const entries = Object.values(data).reverse(); // Latest on top
-          entries.forEach(log => {
+          Object.values(data).reverse().forEach(log => {
             const li = document.createElement("li");
-            const who = log.takenBy || log.addedBy || "Someone";
-            const action = log.action === "added" ? `added ${log.quantityAdded}` : `took ${log.quantityRemoved}`;
-            li.textContent = `${log.timestamp}: ${who} ${action} of "${log.product}"`;
+            li.textContent = `${log.timestamp}: ${log.product} - ${log.action} by ${log.addedBy || log.takenBy || "unknown"}`;
             logList.appendChild(li);
           });
         } else {
-          logList.innerHTML = "<li>No logs found</li>";
+          logList.innerHTML = "<li>No logs found.</li>";
         }
       });
     }
 
     function logout() {
-      firebase.auth().signOut().then(() => {
-        window.location.href = "login.html";
-      });
+      firebase.auth().signOut().then(() => window.location.href = "login.html");
     }
   </script>
 </body>
 </html>
-
