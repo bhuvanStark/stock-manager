@@ -62,8 +62,7 @@ function addOrUpdateProduct() {
   const name = document.getElementById("productName").value.trim();
   const qty = parseInt(document.getElementById("productQty").value);
   const status = document.getElementById("add-status");
-
-  status.textContent = ""; // Reset message
+  status.textContent = "";
 
   if (!name) {
     status.textContent = "Product name cannot be empty.";
@@ -77,18 +76,15 @@ function addOrUpdateProduct() {
 
   const productRef = db.ref(`products/${name}`);
 
-  productRef.once("value").then(snapshot => {
-    if (snapshot.exists()) {
-      const confirmUpdate = confirm(
-        `"${name}" already exists with quantity ${snapshot.val()}. Do you want to add ${qty} more?`
-      );
-      if (confirmUpdate) {
-        productRef.set(snapshot.val() + qty);
-        status.textContent = "Product updated successfully.";
-      }
+  productRef.transaction(current => {
+    return (current || 0) + qty;
+  }, (error, committed, snapshot) => {
+    if (error) {
+      status.textContent = "Error updating product. Try again.";
+    } else if (!committed) {
+      status.textContent = "Update not committed.";
     } else {
-      productRef.set(qty);
-      status.textContent = "Product added successfully.";
+      status.textContent = `✔️ Product updated. New quantity: ${snapshot.val()}`;
     }
   });
 
