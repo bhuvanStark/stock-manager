@@ -17,6 +17,9 @@ function loadProducts() {
 
     const data = snapshot.val();
     if (data) {
+      // Attach search functionality
+      setupSearch(data);
+
       Object.keys(data).forEach(product => {
         const li = document.createElement("li");
         li.textContent = `${product}: ${data[product]} pcs`;
@@ -27,6 +30,32 @@ function loadProducts() {
     }
   });
 }
+
+// To Search 
+function setupSearch(data) {
+  const searchBox = document.getElementById("searchBox");
+  const searchResult = document.getElementById("searchResult");
+
+  searchBox.addEventListener("input", () => {
+    const query = searchBox.value.trim().toLowerCase();
+
+    if (query === "") {
+      searchResult.textContent = "";
+      return;
+    }
+
+    const matched = Object.keys(data).find(product =>
+      product.toLowerCase() === query
+    );
+
+    if (matched) {
+      searchResult.textContent = `✔️ ${matched}: ${data[matched]} in stock`;
+    } else {
+      searchResult.textContent = `❌ Product not found`;
+    }
+  });
+}
+
 
 // Add or update product quantity
 function addOrUpdateProduct() {
