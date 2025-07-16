@@ -1,25 +1,21 @@
-// Wait for Firebase Auth to confirm user is logged in
+// Ensure user is authenticated
 firebase.auth().onAuthStateChanged(user => {
   if (!user) {
     window.location.href = "login.html";
   } else {
-    loadProducts(); // Load data if logged in
+    loadProducts();
   }
 });
 
-const db = firebase.database();
-
-// Load and display all products
+// Load product data
 function loadProducts() {
-  db.ref("products").on("value", snapshot => {
+  firebase.database().ref("products").on("value", snapshot => {
     const productList = document.getElementById("productList");
     productList.innerHTML = "";
 
     const data = snapshot.val();
     if (data) {
-      // Attach search functionality
       setupSearch(data);
-
       Object.keys(data).forEach(product => {
         const li = document.createElement("li");
         li.textContent = `${product}: ${data[product]} pcs`;
@@ -31,10 +27,12 @@ function loadProducts() {
   });
 }
 
-// To Search 
+// Search setup
 function setupSearch(data) {
   const searchBox = document.getElementById("searchBox");
   const searchResult = document.getElementById("searchResult");
+
+  if (!searchBox) return;
 
   searchBox.addEventListener("input", () => {
     const query = searchBox.value.trim().toLowerCase();
@@ -56,8 +54,7 @@ function setupSearch(data) {
   });
 }
 
-
-// Add or update product quantity
+// Add or update product
 function addOrUpdateProduct() {
   const name = document.getElementById("productName").value.trim();
   const qty = parseInt(document.getElementById("productQty").value);
@@ -66,191 +63,128 @@ function addOrUpdateProduct() {
 
   status.textContent = "";
 
-  // Validation checks
-  if (!name) {
-    status.textContent = "❌ Product name cannot be empty.";
+  if (!name || isNaN(qty) || qty <= 0 || !addedBy) {
+    status.textContent = "❌ All fields are required and quantity must be positive.";
     return;
   }
 
-  if (isNaN(qty) || qty <= 0) {
-    status.textContent = "❌ Quantity must be a positive number.";
-    return;
-  }
+  const ref = firebase.database().ref(`products/${name}`);
 
-  if (!addedBy) {
-    status.textContent = "❌ Please enter your name (Added by).";
-    return;
-  }
-
-  const productRef = db.ref(`products/${name}`);
-
-  // Use a transaction to update quantity safely
-  productRef.transaction(currentQty => {
+  ref.transaction(currentQty => {
     return (currentQty || 0) + qty;
   }, (error, committed, snapshot) => {
-    if (error) {
-      status.textContent = "⚠️ Error updating product. Try again.";
-    } else if (!committed) {
-      status.textContent = "❌ Update was not committed.";
+    if (error || !committed) {
+      status.textContent = "⚠️ Failed to update stock.";
     } else {
-      const newQty = snapshot.val();
-      status.textContent = `✅ Product updated successfully. New quantity: ${newQty}`;
-
-      // Add to logs
-      const logEntry = {
+      const log = {
         product: name,
         quantityAdded: qty,
-        addedBy: addedBy,
+        addedBy,
         timestamp: new Date().toISOString(),
         action: "added"
       };
-
-      db.ref("logs").push(logEntry);
+      firebase.database().ref("logs").push(log);
+      status.textContent = `✅ Stock updated. New: ${snapshot.val()}`;
     }
   });
 
-  // Clear fields
+  // Reset fields
   document.getElementById("productName").value = "";
   document.getElementById("productQty").value = "";
   document.getElementById("addedBy").value = "";
 }
 
-
-// Remove stock and log action
+// Remove product
 function removeProduct() {
   const name = document.getElementById("removeName").value.trim();
   const qty = parseInt(document.getElementById("removeQty").value);
   const takenBy = document.getElementById("takenBy").value.trim();
   const status = document.getElementById("remove-status");
+
   status.textContent = "";
 
-  if (!name) {
-    status.textContent = "Enter product name.";
+  if (!name || isNaN(qty) || qty <= 0 || !takenBy) {
+    status.textContent = "❌ All fields are required and quantity must be positive.";
     return;
   }
 
-  if (isNaN(qty) || qty <= 0) {
-    status.textContent = "Enter a valid quantity to remove.";
-    return;
-  }
-
-  if (!takenBy) {
-    status.textContent = "Please enter who is taking the item.";
-    return;
-  }
-
-  // Confirm before proceeding
   const confirmRemove = confirm(`Are you sure you want to remove ${qty} of "${name}"?`);
   if (!confirmRemove) return;
 
-  // Proceed with stock deduction and log
-  db.ref(`products/${name}`).once("value").then(snapshot => {
+  const ref = firebase.database().ref(`products/${name}`);
+  ref.once("value").then(snapshot => {
     const currentQty = snapshot.val();
-
-    if (currentQty === null) {
-      status.textContent = "Product not found.";
-    } else if (currentQty < qty) {
-      status.textContent = "Not enough stock to remove.";
-    } else {
-      // Update stock
-      db.ref(`products/${name}`).transaction(currentQty => {
-  if (currentQty === null || currentQty < qty) {
-    status.textContent = "Not enough stock or product not found.";
-    return; // abort
-  }
-  return currentQty - qty;
-}, (error, committed, snapshot) => {
-  if (error) {
-    status.textContent = "Error removing product.";
-  } else if (!committed) {
-    status.textContent = "Remove failed. Try again.";
-  } else {
-    // Log the removal
-    const logEntry = {
-      product: name,
-      quantityRemoved: qty,
-      takenBy: takenBy,
-      timestamp: new Date().toISOString()
-    };
-    db.ref("logs").push(logEntry);
-    status.textContent = `✔️ Removed ${qty} of ${name}`;
-  }
-});
-
-      // Log the removal
-      const logEntry = {
-        product: name,
-        quantityRemoved: qty,
-        takenBy: takenBy,
-        timestamp: new Date().toISOString()
-      };
-
-      db.ref("logs").push(logEntry);
-      status.textContent = "Stock removed and logged.";
+    if (currentQty === null || currentQty < qty) {
+      status.textContent = "❌ Not enough stock.";
+      return;
     }
+
+    ref.transaction(cur => cur - qty, (error, committed) => {
+      if (error || !committed) {
+        status.textContent = "⚠️ Could not remove product.";
+      } else {
+        const log = {
+          product: name,
+          quantityRemoved: qty,
+          takenBy,
+          timestamp: new Date().toISOString(),
+          action: "removed"
+        };
+        firebase.database().ref("logs").push(log);
+        status.textContent = `✔️ Removed ${qty} of ${name}`;
+      }
+    });
   });
 
-  // Clear fields
+  // Reset fields
   document.getElementById("removeName").value = "";
   document.getElementById("removeQty").value = "";
   document.getElementById("takenBy").value = "";
 }
 
-// Logout function
-function logout() {
-  firebase.auth().signOut().then(() => {
-    window.location.href = "login.html";
-  });
-}
-
-// Export products to CSV
+// Export products
 function exportProducts() {
-  db.ref("products").once("value").then(snapshot => {
+  firebase.database().ref("products").once("value").then(snapshot => {
     const data = snapshot.val();
-    if (!data) {
-      alert("No product data to export.");
-      return;
-    }
+    if (!data) return alert("No product data.");
 
     let csv = "Product,Quantity\n";
-    Object.entries(data).forEach(([key, value]) => {
-      csv += `${key},${value}\n`;
+    Object.entries(data).forEach(([k, v]) => {
+      csv += `${k},${v}\n`;
     });
 
     downloadCSV(csv, "products.csv");
   });
 }
 
-// Export logs to CSV
+// Export logs
 function exportLogs() {
-  db.ref("logs").once("value").then(snapshot => {
+  firebase.database().ref("logs").once("value").then(snapshot => {
     const data = snapshot.val();
-    if (!data) {
-      alert("No logs to export.");
-      return;
-    }
+    if (!data) return alert("No logs to export.");
 
-    let csv = "Product,Quantity Removed,Taken By,Timestamp\n";
+    let csv = "Product,Qty Added,Qty Removed,Added By,Taken By,Timestamp\n";
     Object.values(data).forEach(log => {
-      csv += `"${log.product}",${log.quantityRemoved},"${log.takenBy}","${log.timestamp}"\n`;
+      csv += `"${log.product}",${log.quantityAdded || ""},${log.quantityRemoved || ""},"${log.addedBy || ""}","${log.takenBy || ""}","${log.timestamp}"\n`;
     });
 
     downloadCSV(csv, "logs.csv");
   });
 }
 
-// Helper function to trigger download
+// CSV helper
 function downloadCSV(content, filename) {
-  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob([content], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("download", filename);
+  a.href = url;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
 }
 
+// Toggle all products
 function toggleProducts() {
   const container = document.getElementById("productContainer");
   const btn = document.getElementById("toggleBtn");
@@ -264,4 +198,9 @@ function toggleProducts() {
   }
 }
 
-
+// Logout
+function logout() {
+  firebase.auth().signOut().then(() => {
+    window.location.href = "login.html";
+  });
+}
