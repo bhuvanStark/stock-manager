@@ -32,9 +32,17 @@ function loadProducts() {
 function addOrUpdateProduct() {
   const name = document.getElementById("productName").value.trim();
   const qty = parseInt(document.getElementById("productQty").value);
+  const status = document.getElementById("add-status");
 
-  if (!name || isNaN(qty)) {
-    alert("Enter valid product name and quantity.");
+  status.textContent = ""; // Reset message
+
+  if (!name) {
+    status.textContent = "Product name cannot be empty.";
+    return;
+  }
+
+  if (isNaN(qty) || qty <= 0) {
+    status.textContent = "Quantity must be a positive number.";
     return;
   }
 
@@ -47,16 +55,17 @@ function addOrUpdateProduct() {
       );
       if (confirmUpdate) {
         productRef.set(snapshot.val() + qty);
+        status.textContent = "Product updated successfully.";
       }
     } else {
       productRef.set(qty);
+      status.textContent = "Product added successfully.";
     }
   });
 
   document.getElementById("productName").value = "";
   document.getElementById("productQty").value = "";
 }
-
 
 // Remove stock and log action
 function removeProduct() {
