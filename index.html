@@ -13,11 +13,14 @@
     <h2>Welcome to Stock Manager</h2>
     <button onclick="logout()">Logout</button>
 
-    <h3>Add / Update Product</h3>
-    <p id="add-status" style="color: red;"></p>
-    <input type="text" id="productName" placeholder="Product name"><br>
-    <input type="number" id="productQty" placeholder="Quantity"><br>
-    <button onclick="addOrUpdateProduct()">Add / Update</button>
+    <h3>Add or Update Product</h3>
+<input type="text" id="productName" placeholder="Product Name" />
+<input type="number" id="productQty" placeholder="Quantity" />
+<label for="addedBy">Added by:</label>
+<input type="text" id="addedBy" placeholder="Your name" />
+<button onclick="addOrUpdateProduct()">Add / Update Product</button>
+<p id="add-status"></p>
+
 
     <h3>Search Product</h3>
 <input type="text" id="searchBox" placeholder="Enter product name to search">
