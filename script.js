@@ -1,4 +1,3 @@
-// Ensure user is authenticated
 firebase.auth().onAuthStateChanged(user => {
   if (!user) {
     window.location.href = "login.html";
@@ -7,10 +6,11 @@ firebase.auth().onAuthStateChanged(user => {
   }
 });
 
-// Load product data
 function loadProducts() {
   firebase.database().ref("products").on("value", snapshot => {
     const productList = document.getElementById("productList");
+    if (!productList) return;
+
     productList.innerHTML = "";
 
     const data = snapshot.val();
@@ -27,7 +27,6 @@ function loadProducts() {
   });
 }
 
-// Search setup
 function setupSearch(data) {
   const searchBox = document.getElementById("searchBox");
   const searchResult = document.getElementById("searchResult");
@@ -54,7 +53,6 @@ function setupSearch(data) {
   });
 }
 
-// Add or update product
 function addOrUpdateProduct() {
   const name = document.getElementById("productName").value.trim();
   const qty = parseInt(document.getElementById("productQty").value);
@@ -68,8 +66,7 @@ function addOrUpdateProduct() {
     return;
   }
 
-  const ref = firebase.database().ref(`products/${name}`);
-
+  const ref = firebase.database().ref("products/" + name);
   ref.transaction(currentQty => {
     return (currentQty || 0) + qty;
   }, (error, committed, snapshot) => {
@@ -88,13 +85,11 @@ function addOrUpdateProduct() {
     }
   });
 
-  // Reset fields
   document.getElementById("productName").value = "";
   document.getElementById("productQty").value = "";
   document.getElementById("addedBy").value = "";
 }
 
-// Remove product
 function removeProduct() {
   const name = document.getElementById("removeName").value.trim();
   const qty = parseInt(document.getElementById("removeQty").value);
@@ -111,7 +106,7 @@ function removeProduct() {
   const confirmRemove = confirm(`Are you sure you want to remove ${qty} of "${name}"?`);
   if (!confirmRemove) return;
 
-  const ref = firebase.database().ref(`products/${name}`);
+  const ref = firebase.database().ref("products/" + name);
   ref.once("value").then(snapshot => {
     const currentQty = snapshot.val();
     if (currentQty === null || currentQty < qty) {
@@ -136,13 +131,26 @@ function removeProduct() {
     });
   });
 
-  // Reset fields
   document.getElementById("removeName").value = "";
   document.getElementById("removeQty").value = "";
   document.getElementById("takenBy").value = "";
 }
 
-// Export products
+function toggleProducts() {
+  const container = document.getElementById("productContainer");
+  const btn = document.getElementById("toggleBtn");
+
+  if (!container || !btn) return;
+
+  if (container.style.display === "none") {
+    container.style.display = "block";
+    btn.textContent = "🔼 Hide All Products";
+  } else {
+    container.style.display = "none";
+    btn.textContent = "📦 Show All Products";
+  }
+}
+
 function exportProducts() {
   firebase.database().ref("products").once("value").then(snapshot => {
     const data = snapshot.val();
@@ -157,7 +165,6 @@ function exportProducts() {
   });
 }
 
-// Export logs
 function exportLogs() {
   firebase.database().ref("logs").once("value").then(snapshot => {
     const data = snapshot.val();
@@ -172,7 +179,6 @@ function exportLogs() {
   });
 }
 
-// CSV helper
 function downloadCSV(content, filename) {
   const blob = new Blob([content], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
@@ -184,21 +190,6 @@ function downloadCSV(content, filename) {
   document.body.removeChild(a);
 }
 
-// Toggle all products
-function toggleProducts() {
-  const container = document.getElementById("productContainer");
-  const btn = document.getElementById("toggleBtn");
-
-  if (container.style.display === "none") {
-    container.style.display = "block";
-    btn.textContent = "🔼 Hide All Products";
-  } else {
-    container.style.display = "none";
-    btn.textContent = "📦 Show All Products";
-  }
-}
-
-// Logout
 function logout() {
   firebase.auth().signOut().then(() => {
     window.location.href = "login.html";
