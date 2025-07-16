@@ -3,9 +3,13 @@
 <head>
   <title>Stock Dashboard</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+
+  <!-- Firebase v8 SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+  <!-- Your Firebase config and DB/Auth init -->
   <script src="firebase-config.js"></script>
 </head>
 <body>
@@ -14,32 +18,32 @@
     <button onclick="logout()">Logout</button>
 
     <!-- Add / Update Product -->
-<div class="section-card">
-  <h3>Add or Update Product</h3>
-  <input type="text" id="productName" placeholder="Product Name" required />
-  <input type="number" id="productQty" placeholder="Quantity" required />
-  <input type="text" id="addedBy" placeholder="Added by (your name)" required />
-  <button onclick="addOrUpdateProduct()">Add / Update Product</button>
-  <p id="add-status"></p>
-</div>
+    <div class="section-card">
+      <h3>Add or Update Product</h3>
+      <input type="text" id="productName" placeholder="Product Name" required />
+      <input type="number" id="productQty" placeholder="Quantity" required />
+      <input type="text" id="addedBy" placeholder="Added by (your name)" required />
+      <button onclick="addOrUpdateProduct()">Add / Update Product</button>
+      <p id="add-status"></p>
+    </div>
 
-
-
+    <!-- Search -->
     <h3>Search Product</h3>
-<input type="text" id="searchBox" placeholder="Enter product name to search">
-<p id="searchResult" style="font-weight: bold; margin-top: 5px;"></p>
+    <input type="text" id="searchBox" placeholder="Enter product name to search">
+    <p id="searchResult" style="font-weight: bold; margin-top: 5px;"></p>
 
-<button onclick="toggleProducts()" id="toggleBtn">📦 Show All Products</button>
-<div id="productContainer" style="display: none; margin-top: 15px;">
-  <ul id="productList"></ul>
-</div>
+    <!-- View All -->
+    <button onclick="toggleProducts()" id="toggleBtn">📦 Show All Products</button>
+    <div id="productContainer" style="display: none; margin-top: 15px;">
+      <ul id="productList"></ul>
+    </div>
 
+    <!-- Backup & Export -->
     <h3>Backup & Export</h3>
-<button onclick="exportProducts()">📦 Download Product Stock CSV</button>
-<button onclick="exportLogs()">🧾 Download Logs CSV</button>
+    <button onclick="exportProducts()">📦 Download Product Stock CSV</button>
+    <button onclick="exportLogs()">🧾 Download Logs CSV</button>
 
-
-
+    <!-- Remove Product -->
     <h3>Remove Product</h3>
     <p id="remove-status" style="color: red;"></p>
     <input type="text" id="removeName" placeholder="Product name to remove"><br>
@@ -48,7 +52,7 @@
     <button onclick="removeProduct()">Remove</button>
   </div>
 
+  <!-- Main logic -->
   <script src="script.js"></script>
 </body>
 </html>
-
