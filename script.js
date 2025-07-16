@@ -245,4 +245,17 @@ function downloadCSV(content, filename) {
   document.body.removeChild(a);
 }
 
+function toggleProducts() {
+  const container = document.getElementById("productContainer");
+  const btn = document.getElementById("toggleBtn");
+
+  if (container.style.display === "none") {
+    container.style.display = "block";
+    btn.textContent = "🔼 Hide All Products";
+  } else {
+    container.style.display = "none";
+    btn.textContent = "📦 Show All Products";
+  }
+}
+
 
