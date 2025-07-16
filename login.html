@@ -3,8 +3,11 @@
 <head>
   <title>Login | Stock Manager</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
+
+  <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
   <script src="firebase-config.js"></script>
 </head>
 <body>
@@ -18,13 +21,11 @@
   </div>
 
   <script>
-    const auth = firebase.auth();
-
     function login() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
 
-      auth.signInWithEmailAndPassword(email, password)
+      firebase.auth().signInWithEmailAndPassword(email, password)
         .then(() => {
           window.location.href = "index.html";
         })
@@ -35,4 +36,5 @@
   </script>
 </body>
 </html>
+
 
