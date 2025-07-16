@@ -1,5 +1,6 @@
 // firebase-config.js
 
+// ✅ Firebase V10 style config (no "import" statements)
 const firebaseConfig = {
   apiKey: "AIzaSyA-Jc3Lwrvd06aXdzg9xhyp6YMaefaryIs",
   authDomain: "stock-manager-24e42.firebaseapp.com",
@@ -10,7 +11,8 @@ const firebaseConfig = {
   appId: "1:116764560364:web:0daab1daf060923626cec9"
 };
 
-// Initialize Firebase
+// ✅ Initialize Firebase (exposes `firebase.database()` globally)
 firebase.initializeApp(firebaseConfig);
+
 
 
