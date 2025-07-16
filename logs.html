@@ -3,9 +3,12 @@
 <head>
   <title>Stock Logs</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+
+  <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
   <script src="firebase-config.js"></script>
 </head>
 <body>
@@ -24,10 +27,8 @@
       }
     });
 
-    const db = firebase.database();
-
     function loadLogs() {
-      db.ref("logs").on("value", snapshot => {
+      firebase.database().ref("logs").on("value", snapshot => {
         const logList = document.getElementById("logList");
         logList.innerHTML = "";
 
@@ -36,7 +37,9 @@
           const entries = Object.values(data).reverse(); // Latest on top
           entries.forEach(log => {
             const li = document.createElement("li");
-            li.textContent = `${log.timestamp}: ${log.takenBy} took ${log.quantityRemoved} of "${log.product}"`;
+            const who = log.takenBy || log.addedBy || "Someone";
+            const action = log.action === "added" ? `added ${log.quantityAdded}` : `took ${log.quantityRemoved}`;
+            li.textContent = `${log.timestamp}: ${who} ${action} of "${log.product}"`;
             logList.appendChild(li);
           });
         } else {
@@ -53,3 +56,4 @@
   </script>
 </body>
 </html>
+
