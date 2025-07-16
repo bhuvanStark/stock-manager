@@ -179,3 +179,52 @@ function logout() {
   });
 }
 
+// Export products to CSV
+function exportProducts() {
+  db.ref("products").once("value").then(snapshot => {
+    const data = snapshot.val();
+    if (!data) {
+      alert("No product data to export.");
+      return;
+    }
+
+    let csv = "Product,Quantity\n";
+    Object.entries(data).forEach(([key, value]) => {
+      csv += `${key},${value}\n`;
+    });
+
+    downloadCSV(csv, "products.csv");
+  });
+}
+
+// Export logs to CSV
+function exportLogs() {
+  db.ref("logs").once("value").then(snapshot => {
+    const data = snapshot.val();
+    if (!data) {
+      alert("No logs to export.");
+      return;
+    }
+
+    let csv = "Product,Quantity Removed,Taken By,Timestamp\n";
+    Object.values(data).forEach(log => {
+      csv += `"${log.product}",${log.quantityRemoved},"${log.takenBy}","${log.timestamp}"\n`;
+    });
+
+    downloadCSV(csv, "logs.csv");
+  });
+}
+
+// Helper function to trigger download
+function downloadCSV(content, filename) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.setAttribute("href", url);
+  a.setAttribute("download", filename);
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+
