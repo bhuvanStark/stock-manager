@@ -129,7 +129,29 @@ function removeProduct() {
       status.textContent = "Not enough stock to remove.";
     } else {
       // Update stock
-      db.ref(`products/${name}`).set(currentQty - qty);
+      db.ref(`products/${name}`).transaction(currentQty => {
+  if (currentQty === null || currentQty < qty) {
+    status.textContent = "Not enough stock or product not found.";
+    return; // abort
+  }
+  return currentQty - qty;
+}, (error, committed, snapshot) => {
+  if (error) {
+    status.textContent = "Error removing product.";
+  } else if (!committed) {
+    status.textContent = "Remove failed. Try again.";
+  } else {
+    // Log the removal
+    const logEntry = {
+      product: name,
+      quantityRemoved: qty,
+      takenBy: takenBy,
+      timestamp: new Date().toISOString()
+    };
+    db.ref("logs").push(logEntry);
+    status.textContent = `✔️ Removed ${qty} of ${name}`;
+  }
+});
 
       // Log the removal
       const logEntry = {
