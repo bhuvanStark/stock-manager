@@ -63,36 +63,40 @@ function addOrUpdateProduct() {
   const qty = parseInt(document.getElementById("productQty").value);
   const addedBy = document.getElementById("addedBy").value.trim();
   const status = document.getElementById("add-status");
+
   status.textContent = "";
 
+  // Validation checks
   if (!name) {
-    status.textContent = "Product name cannot be empty.";
+    status.textContent = "❌ Product name cannot be empty.";
     return;
   }
 
   if (isNaN(qty) || qty <= 0) {
-    status.textContent = "Quantity must be a positive number.";
+    status.textContent = "❌ Quantity must be a positive number.";
     return;
   }
 
   if (!addedBy) {
-    status.textContent = "Please enter who is adding the product.";
+    status.textContent = "❌ Please enter your name (Added by).";
     return;
   }
 
   const productRef = db.ref(`products/${name}`);
 
+  // Use a transaction to update quantity safely
   productRef.transaction(currentQty => {
     return (currentQty || 0) + qty;
   }, (error, committed, snapshot) => {
     if (error) {
-      status.textContent = "Error updating product. Try again.";
+      status.textContent = "⚠️ Error updating product. Try again.";
     } else if (!committed) {
-      status.textContent = "Update not committed.";
+      status.textContent = "❌ Update was not committed.";
     } else {
-      status.textContent = `✔️ Product updated. New quantity: ${snapshot.val()}`;
+      const newQty = snapshot.val();
+      status.textContent = `✅ Product updated successfully. New quantity: ${newQty}`;
 
-      // Add log for the addition
+      // Add to logs
       const logEntry = {
         product: name,
         quantityAdded: qty,
@@ -100,6 +104,7 @@ function addOrUpdateProduct() {
         timestamp: new Date().toISOString(),
         action: "added"
       };
+
       db.ref("logs").push(logEntry);
     }
   });
@@ -109,6 +114,7 @@ function addOrUpdateProduct() {
   document.getElementById("productQty").value = "";
   document.getElementById("addedBy").value = "";
 }
+
 
 // Remove stock and log action
 function removeProduct() {
