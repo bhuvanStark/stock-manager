@@ -1,90 +1,171 @@
+// Firebase v8 config
+firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-function addStock() {
-  const name = productName.value.trim();
-  const sku = sku.value.trim();
-  const qty = parseInt(quantity.value);
-  const receiver = receiver.value.trim();
+function addOrUpdateProduct() {
+  const sku = document.getElementById("productSKU").value.trim();
+  const name = document.getElementById("productName").value.trim();
+  const qty = parseInt(document.getElementById("productQty").value);
+  const receiver = document.getElementById("receiverName").value.trim();
 
-  if (!name || !sku || !qty || !receiver) return alert("Fill all fields.");
+  if (!sku || !name || isNaN(qty) || qty <= 0) {
+    alert("Please enter valid SKU, Name and Quantity.");
+    return;
+  }
 
-  db.ref("stock/" + sku).get().then(snap => {
-    const currentQty = snap.exists() ? snap.val().quantity : 0;
-    db.ref("stock/" + sku).set({
-      name, sku, quantity: currentQty + qty
-    });
+  const productRef = db.ref("products/" + sku);
+  productRef.once("value", snapshot => {
+    const existing = snapshot.val();
+    const updatedQty = existing ? existing.quantity + qty : qty;
+    const data = { name: name, quantity: updatedQty };
+    productRef.set(data);
 
+    // log it
+    const timestamp = new Date().toLocaleString();
     db.ref("logs").push({
-      type: "inward",
-      name, sku, quantity: qty, receiver,
-      timestamp: new Date().toISOString()
-    });
-
-    alert("Stock added.");
-  });
-}
-
-function removeStock() {
-  const query = removeProduct.value.trim();
-  const qty = parseInt(removeQuantity.value);
-  const takenBy = takenBy.value.trim();
-
-  if (!query || !qty || !takenBy) return alert("Fill all fields.");
-
-  db.ref("stock").once("value", snap => {
-    let keyFound = null;
-    snap.forEach(child => {
-      const item = child.val();
-      if (item.sku === query || item.name === query) keyFound = child.key;
-    });
-
-    if (!keyFound) return alert("Item not found.");
-    const item = snap.val()[keyFound];
-    if (item.quantity < qty) return alert("Insufficient stock.");
-
-    db.ref("stock/" + keyFound).update({
-      quantity: item.quantity - qty
-    });
-
-    db.ref("logs").push({
-      type: "outward",
-      name: item.name,
-      sku: item.sku,
+      sku,
+      name,
       quantity: qty,
-      takenBy,
-      timestamp: new Date().toISOString()
+      action: "IN",
+      person: receiver || "Unknown",
+      timestamp
     });
 
-    alert("Stock removed.");
+    alert("Stock added/updated.");
+    clearInwardFields();
+    loadStock();
   });
 }
 
-function searchProducts() {
-  const q = searchInput.value.toLowerCase();
-  db.ref("stock").once("value", snap => {
-    let html = "";
-    snap.forEach(child => {
-      const item = child.val();
-      if (item.name.toLowerCase().includes(q) || item.sku.toLowerCase().includes(q)) {
-        html += `<div>${item.name} (${item.sku}) - Qty: ${item.quantity}</div>`;
+function removeProduct() {
+  const input = document.getElementById("removeSKUorName").value.trim();
+  const qty = parseInt(document.getElementById("removeQty").value);
+  const takenBy = document.getElementById("takenBy").value.trim();
+
+  if (!input || isNaN(qty) || qty <= 0) {
+    alert("Please enter valid SKU/Name and Quantity.");
+    return;
+  }
+
+  db.ref("products").once("value", snapshot => {
+    let foundKey = null, foundName = null;
+    snapshot.forEach(child => {
+      const key = child.key;
+      const val = child.val();
+      if (key === input || val.name.toLowerCase() === input.toLowerCase()) {
+        foundKey = key;
+        foundName = val.name;
       }
     });
-    document.getElementById("searchResults").innerHTML = html || "No match.";
+
+    if (!foundKey) {
+      alert("Product not found.");
+      return;
+    }
+
+    const prodRef = db.ref("products/" + foundKey);
+    prodRef.once("value", snap => {
+      const data = snap.val();
+      if (data.quantity < qty) {
+        alert("Not enough stock.");
+        return;
+      }
+      const newQty = data.quantity - qty;
+      if (newQty === 0) prodRef.remove();
+      else prodRef.update({ quantity: newQty });
+
+      // log
+      const timestamp = new Date().toLocaleString();
+      db.ref("logs").push({
+        sku: foundKey,
+        name: foundName,
+        quantity: qty,
+        action: "OUT",
+        person: takenBy || "Unknown",
+        timestamp
+      });
+
+      alert("Stock removed.");
+      clearOutwardFields();
+      loadStock();
+    });
+  });
+}
+
+function loadStock() {
+  const body = document.getElementById("stockTableBody");
+  body.innerHTML = "";
+  db.ref("products").once("value", snapshot => {
+    snapshot.forEach(child => {
+      const sku = child.key;
+      const { name, quantity } = child.val();
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${sku}</td><td>${name}</td><td>${quantity}</td>`;
+      body.appendChild(row);
+    });
   });
 }
 
 function exportToCSV() {
-  db.ref("logs").once("value", snap => {
-    let csv = "Type,Name,SKU,Quantity,Person,Timestamp\n";
-    snap.forEach(child => {
-      const log = child.val();
-      csv += `${log.type},${log.name},${log.sku},${log.quantity},${log.receiver || log.takenBy},${log.timestamp}\n`;
+  db.ref("logs").once("value", snapshot => {
+    let csv = "SKU,Product Name,Quantity,Action,Person,Date-Time\n";
+    snapshot.forEach(child => {
+      const { sku, name, quantity, action, person, timestamp } = child.val();
+      csv += `${sku},${name},${quantity},${action},${person},${timestamp}\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    a.href = url;
     a.download = "stock_logs.csv";
     a.click();
+    window.URL.revokeObjectURL(url);
   });
 }
+
+function loadLogs() {
+  const logsBody = document.getElementById("logsBody");
+  if (!logsBody) return;
+  logsBody.innerHTML = "";
+  db.ref("logs").once("value", snapshot => {
+    snapshot.forEach(child => {
+      const { sku, name, quantity, action, person, timestamp } = child.val();
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${sku}</td>
+        <td>${name}</td>
+        <td>${quantity}</td>
+        <td>${action}</td>
+        <td>${person}</td>
+        <td>${timestamp}</td>
+      `;
+      logsBody.appendChild(row);
+    });
+  });
+}
+
+function filterTable() {
+  const input = document.getElementById("searchInput").value.toLowerCase();
+  const rows = document.querySelectorAll("#stockTableBody tr");
+  rows.forEach(row => {
+    const text = row.innerText.toLowerCase();
+    row.style.display = text.includes(input) ? "" : "none";
+  });
+}
+
+function clearInwardFields() {
+  document.getElementById("productSKU").value = "";
+  document.getElementById("productName").value = "";
+  document.getElementById("productQty").value = "";
+  document.getElementById("receiverName").value = "";
+}
+
+function clearOutwardFields() {
+  document.getElementById("removeSKUorName").value = "";
+  document.getElementById("removeQty").value = "";
+  document.getElementById("takenBy").value = "";
+}
+
+// auto-load stock when index page is opened
+window.onload = loadStock;
