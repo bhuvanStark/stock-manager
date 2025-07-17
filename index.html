@@ -1,66 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <title>Stock Manager</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Stock Management System</h1>
+  <h1>📦 Stock Manager</h1>
 
-  <!-- Inward Stock Section -->
-  <section>
+  <!-- Inward -->
+  <section class="card">
     <h2>Inward Stock</h2>
-    <input type="text" id="skuInput" placeholder="Enter SKU">
-    <input type="text" id="nameInput" placeholder="Enter Product Name">
-    <input type="number" id="qtyInput" placeholder="Enter Quantity">
-    <input type="text" id="receiverInput" placeholder="Received By">
-    <button onclick="inwardStock()">Add Stock</button>
+    <input id="sku" placeholder="SKU" />
+    <input id="name" placeholder="Product Name" />
+    <input id="quantity" type="number" placeholder="Quantity" />
+    <input id="receiver" placeholder="Received By" />
+    <button onclick="inwardStock()">Add / Update</button>
   </section>
 
-  <!-- Outward Stock Section -->
-  <section>
+  <!-- Outward -->
+  <section class="card">
     <h2>Outward Stock</h2>
-    <input type="text" id="searchRemoveInput" placeholder="Enter SKU or Name">
-    <input type="number" id="removeQtyInput" placeholder="Quantity to Remove">
-    <input type="text" id="takenByInput" placeholder="Taken By">
+    <input id="searchKey" placeholder="Enter SKU or Name" />
+    <input id="removeQuantity" type="number" placeholder="Quantity" />
+    <input id="takenBy" placeholder="Taken By" />
     <button onclick="outwardStock()">Remove Stock</button>
   </section>
 
-  <!-- Search Section -->
-  <section>
-    <h2>Search Products</h2>
-    <input type="text" id="searchInput" placeholder="Search by SKU or Name" oninput="searchProducts()">
-  </section>
-
-  <!-- Products Table -->
-  <section>
-    <h2>Product Stock</h2>
-    <table id="productTable">
+  <!-- Search + Display -->
+  <section class="card">
+    <h2>Current Stock</h2>
+    <input id="searchFilter" placeholder="Filter by SKU or Name" oninput="filterProducts()" />
+    <table>
       <thead>
-        <tr>
-          <th>SKU</th>
-          <th>Product Name</th>
-          <th>Quantity</th>
-        </tr>
+        <tr><th>SKU</th><th>Name</th><th>Qty</th></tr>
       </thead>
-      <tbody id="productTableBody">
-        <!-- Dynamic content -->
-      </tbody>
+      <tbody id="stockTable"></tbody>
     </table>
   </section>
 
-  <!-- Actions -->
-  <section>
-    <button onclick="exportCSV()">Export CSV</button>
+  <!-- Logs/CSV -->
+  <section class="card">
+    <button onclick="exportCSV()">Export Logs CSV</button>
     <button onclick="window.location.href='logs.html'">View Logs</button>
   </section>
 
-  <!-- Firebase SDKs (must be FIRST before using firebase) -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <!-- Firebase Config and Custom Script -->
+  <!-- Config & Script -->
   <script src="firebase-config.js"></script>
   <script src="script.js"></script>
 </body>
