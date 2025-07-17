@@ -1,51 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
   <title>Stock Logs</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- Firebase v8 -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="firebase-config.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Stock Logs</h1>
-    <table id="logsTable">
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>Quantity</th>
-          <th>Action</th>
-          <th>By</th>
-          <th>Receiver</th>
-          <th>Date & Time</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <a href="index.html" class="view-logs-btn">Back to Dashboard</a>
-  </div>
+  <h1>Stock Logs</h1>
+  <table id="logsTable">
+    <thead>
+      <tr>
+        <th>SKU</th>
+        <th>Product Name</th>
+        <th>Quantity</th>
+        <th>Action</th>
+        <th>Person</th>
+        <th>Date-Time</th>
+      </tr>
+    </thead>
+    <tbody id="logsBody"></tbody>
+  </table>
 
+  <script src="firebase-config.js"></script>
+  <script src="script.js"></script>
   <script>
-    firebase.database().ref("logs").on("value", snapshot => {
-      const tbody = document.querySelector("#logsTable tbody");
-      tbody.innerHTML = "";
-      snapshot.forEach(child => {
-        const log = child.val();
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${log.product}</td>
-          <td>${log.quantity}</td>
-          <td>${log.action}</td>
-          <td>${log.takenBy || ""}</td>
-          <td>${log.receiver || ""}</td>
-          <td>${log.timestamp || ""}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    });
+    window.onload = loadLogs;
   </script>
 </body>
 </html>
