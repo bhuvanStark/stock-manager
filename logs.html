@@ -1,47 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Stock Logs</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Outward Stock Logs</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="firebase-config.js"></script>
 </head>
 <body>
   <div class="container">
-    <h2>Stock Logs</h2>
-    <button onclick="logout()">Logout</button>
-    <ul id="logList"></ul>
+    <h1>📄 Outward Stock Logs</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Name</th>
+          <th>Quantity</th>
+          <th>Taken By</th>
+          <th>Date/Time</th>
+        </tr>
+      </thead>
+      <tbody id="logsTableBody"></tbody>
+    </table>
+    <br />
+    <a href="index.html" class="log-link">⬅️ Back to Dashboard</a>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
   <script>
-    firebase.auth().onAuthStateChanged(user => {
-      if (!user) window.location.href = "login.html";
-      else loadLogs();
-    });
-
-    function loadLogs() {
-      firebase.database().ref("logs").on("value", snapshot => {
-        const logList = document.getElementById("logList");
-        logList.innerHTML = "";
-        const data = snapshot.val();
-
-        if (data) {
-          Object.values(data).reverse().forEach(log => {
-            const li = document.createElement("li");
-            li.textContent = `${log.timestamp}: ${log.product} - ${log.action} by ${log.addedBy || log.takenBy || "unknown"}`;
-            logList.appendChild(li);
-          });
-        } else {
-          logList.innerHTML = "<li>No logs found.</li>";
-        }
+    firebase.database().ref("stockLogs").once("value", (snapshot) => {
+      const tbody = document.getElementById("logsTableBody");
+      snapshot.forEach((child) => {
+        const log = child.val();
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${log.sku || "-"}</td>
+          <td>${log.name || "-"}</td>
+          <td>${log.quantity || 0}</td>
+          <td>${log.takenBy || "-"}</td>
+          <td>${log.datetime || "-"}</td>
+        `;
+        tbody.appendChild(row);
       });
-    }
-
-    function logout() {
-      firebase.auth().signOut().then(() => window.location.href = "login.html");
-    }
+    });
   </script>
 </body>
 </html>
