@@ -1,37 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Stock Management</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Stock Manager</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Simple Stock Manager</h1>
+  <h1>Stock Management System</h1>
 
-  <div class="section">
+  <!-- Inward Stock Section -->
+  <section>
     <h2>Inward Stock</h2>
-    <input type="text" id="productSKU" placeholder="Product SKU" />
-    <input type="text" id="productName" placeholder="Product Name" />
-    <input type="number" id="productQty" placeholder="Quantity" />
-    <input type="text" id="receiverName" placeholder="Receiver Name" />
-    <button onclick="addOrUpdateProduct()">Add / Update Stock</button>
-  </div>
+    <input type="text" id="skuInput" placeholder="Enter SKU">
+    <input type="text" id="nameInput" placeholder="Enter Product Name">
+    <input type="number" id="qtyInput" placeholder="Enter Quantity">
+    <input type="text" id="receiverInput" placeholder="Received By">
+    <button onclick="inwardStock()">Add Stock</button>
+  </section>
 
-  <div class="section">
+  <!-- Outward Stock Section -->
+  <section>
     <h2>Outward Stock</h2>
-    <input type="text" id="removeSKUorName" placeholder="Enter SKU or Name" />
-    <input type="number" id="removeQty" placeholder="Quantity to Remove" />
-    <input type="text" id="takenBy" placeholder="Taken By (Name)" />
-    <button onclick="removeProduct()">Remove Stock</button>
-  </div>
+    <input type="text" id="searchRemoveInput" placeholder="Enter SKU or Name">
+    <input type="number" id="removeQtyInput" placeholder="Quantity to Remove">
+    <input type="text" id="takenByInput" placeholder="Taken By">
+    <button onclick="outwardStock()">Remove Stock</button>
+  </section>
 
-  <div class="section">
-    <h2>Search Stock</h2>
-    <input type="text" id="searchInput" placeholder="Search by SKU or Name" onkeyup="filterTable()" />
-  </div>
+  <!-- Search Section -->
+  <section>
+    <h2>Search Products</h2>
+    <input type="text" id="searchInput" placeholder="Search by SKU or Name" oninput="searchProducts()">
+  </section>
 
-  <div class="section">
-    <h2>Current Stock</h2>
-    <table id="stockTable">
+  <!-- Products Table -->
+  <section>
+    <h2>Product Stock</h2>
+    <table id="productTable">
       <thead>
         <tr>
           <th>SKU</th>
@@ -39,25 +44,24 @@
           <th>Quantity</th>
         </tr>
       </thead>
-      <tbody id="stockTableBody"></tbody>
+      <tbody id="productTableBody">
+        <!-- Dynamic content -->
+      </tbody>
     </table>
-  </div>
+  </section>
 
-  <div class="section">
-    <button onclick="exportToCSV()">Export CSV</button>
-    <a href="logs.html"><button>View Logs</button></a>
-  </div>
+  <!-- Actions -->
+  <section>
+    <button onclick="exportCSV()">Export CSV</button>
+    <button onclick="window.location.href='logs.html'">View Logs</button>
+  </section>
 
-  <!-- Firebase v8 SDKs (REQUIRED before your scripts) -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <!-- Firebase SDKs (must be FIRST before using firebase) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-<!-- Your Firebase config (initializes firebaseConfig object) -->
-<script src="firebase-config.js"></script>
-
-<!-- Your custom logic -->
-<script src="script.js"></script>
-
-
+  <!-- Firebase Config and Custom Script -->
+  <script src="firebase-config.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
