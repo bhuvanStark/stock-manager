@@ -1,38 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Firebase Stock Manager</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Dashboard</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1>Stock Manager</h1>
+    <div class="header">
+      <h2>📦 Stock Manager</h2>
+      <button onclick="logout()">Logout</button>
+    </div>
 
-    <h2>Inward Stock</h2>
-    <input id="productName" placeholder="Product Name" />
-    <input id="sku" placeholder="SKU" />
-    <input id="quantity" type="number" placeholder="Quantity" />
-    <input id="receiver" placeholder="Receiver Name" />
-    <button onclick="addStock()">Submit</button>
+    <div class="section">
+      <h3>📥 Inward Stock</h3>
+      <input type="text" id="productName" placeholder="Product Name" />
+      <input type="number" id="productQty" placeholder="Quantity" />
+      <input type="text" id="addedBy" placeholder="Received By (Your Name)" />
+      <button onclick="addOrUpdateProduct()">Add / Update Stock</button>
+      <p id="add-status"></p>
+    </div>
 
-    <h2>Outward Stock</h2>
-    <input id="removeProduct" placeholder="Product Name or SKU" />
-    <input id="removeQuantity" type="number" placeholder="Quantity" />
-    <input id="takenBy" placeholder="Taken By" />
-    <button onclick="removeStock()">Submit</button>
+    <div class="section">
+      <h3>🔍 Search Product</h3>
+      <input type="text" id="searchBox" placeholder="Enter product name to search" />
+      <p id="searchResult"></p>
+      <button onclick="toggleProducts()" id="toggleBtn">📦 Show All Products</button>
+      <div id="productContainer" style="display: none; margin-top: 15px;">
+        <ul id="productList"></ul>
+      </div>
+    </div>
 
-    <h2>Search Product</h2>
-    <input id="searchInput" placeholder="Search..." oninput="searchProducts()" />
-    <div id="searchResults"></div>
+    <div class="section">
+      <h3>📤 Outward Stock</h3>
+      <input type="text" id="removeName" placeholder="Product Name" />
+      <input type="number" id="removeQty" placeholder="Quantity to Remove" />
+      <input type="text" id="takenBy" placeholder="Issued To (Name)" />
+      <button onclick="removeProduct()">Remove</button>
+      <p id="remove-status"></p>
+    </div>
 
-    <button onclick="exportToCSV()">Export CSV</button>
-    <a href="logs.html" class="button">View Logs</a>
+    <div class="section">
+      <h3>📄 Backup & Export</h3>
+      <button onclick="exportProducts()">📦 Export Stock</button>
+      <button onclick="exportLogs()">🧾 Export Logs</button>
+      <a href="logs.html" class="log-link">View Logs →</a>
+    </div>
   </div>
 
   <script src="script.js"></script>
