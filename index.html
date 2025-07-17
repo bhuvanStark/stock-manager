@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Firebase Stock Manager</title>
   <link rel="stylesheet" href="style.css">
+
+  <!-- Firebase SDK v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -14,29 +16,33 @@
   <div class="container">
     <h1>Firebase Stock Manager</h1>
 
+    <!-- Inward Stock Section -->
     <div class="section">
       <h2>Inward Stock</h2>
       <input type="text" id="productName" placeholder="Product Name">
       <input type="text" id="sku" placeholder="SKU">
       <input type="number" id="quantity" placeholder="Quantity">
       <input type="text" id="receiver" placeholder="Receiver Name">
-      <button onclick="addOrUpdateProduct()">Submit</button>
+      <button onclick="inwardStock()">Submit</button>
     </div>
 
+    <!-- Outward Stock Section -->
     <div class="section">
       <h2>Outward Stock</h2>
       <input type="text" id="removeProductName" placeholder="Product Name or SKU">
       <input type="number" id="removeQuantity" placeholder="Quantity">
       <input type="text" id="takenBy" placeholder="Taken By">
-      <button onclick="removeProduct()">Submit</button>
+      <button onclick="outwardStock()">Submit</button>
     </div>
 
+    <!-- Search Section -->
     <div class="section">
       <h2>Search Product</h2>
       <input type="text" id="searchInput" placeholder="Search by SKU or Name">
       <div id="searchResults"></div>
     </div>
 
+    <!-- Export + Logs Section -->
     <div class="section">
       <button onclick="exportToCSV()">Export to CSV</button>
       <a href="logs.html" class="button">View Logs</a>
