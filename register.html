@@ -1,22 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Register</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="firebase-config.js"></script>
 </head>
 <body>
   <div class="container">
-    <h2>Register</h2>
+    <h1>📝 Register</h1>
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password" />
     <button onclick="register()">Register</button>
     <p>Already have an account? <a href="login.html">Login</a></p>
-    <p id="register-status"></p>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="firebase-config.js"></script>
   <script>
     function register() {
       const email = document.getElementById("email").value;
@@ -24,7 +25,7 @@
 
       firebase.auth().createUserWithEmailAndPassword(email, password)
         .then(() => window.location.href = "index.html")
-        .catch(err => document.getElementById("register-status").textContent = err.message);
+        .catch((error) => alert(error.message));
     }
   </script>
 </body>
