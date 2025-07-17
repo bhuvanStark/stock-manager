@@ -1,109 +1,192 @@
-const db = firebase.database();
-const productRef = db.ref("products");
-const logRef = db.ref("stockLogs");
+// Firebase v8
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const auth = firebase.auth();
 
-firebase.auth().onAuthStateChanged((user) => {
-  if (!user && location.pathname.includes("index.html")) {
-    window.location.href = "login.html";
+document.addEventListener("DOMContentLoaded", function () {
+  const productNameInput = document.getElementById("productName");
+  const skuInput = document.getElementById("sku");
+  const quantityInput = document.getElementById("quantity");
+  const inwardBtn = document.getElementById("addBtn");
+  const outwardBtn = document.getElementById("removeBtn");
+  const outwardNameInput = document.getElementById("outwardName");
+  const outwardProductInput = document.getElementById("outwardProduct");
+  const searchInput = document.getElementById("searchInput");
+  const tableBody = document.querySelector("#productTable tbody");
+  const downloadBtn = document.getElementById("downloadBtn");
+  const suggestions = document.getElementById("suggestions");
+  const outwardSuggestions = document.getElementById("outwardSuggestions");
+  const searchSuggestions = document.getElementById("searchSuggestions");
+
+  // Load stock data
+  function loadStock() {
+    database.ref("stock").once("value", (snapshot) => {
+      tableBody.innerHTML = "";
+      snapshot.forEach((childSnapshot) => {
+        const item = childSnapshot.val();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.sku}</td>
+          <td>${item.quantity}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    });
   }
-});
 
-function getDatetime() {
-  return new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-}
+  loadStock();
 
-function inwardStock() {
-  const sku = skuVal();
-  const name = nameVal();
-  const qty = +document.getElementById("quantity").value;
-  const receiver = document.getElementById("receiver").value.trim();
+  // Suggestion dropdown logic
+  function setupAutoSuggest(input, suggestionBox) {
+    input.addEventListener("input", () => {
+      const query = input.value.toLowerCase();
+      database.ref("stock").once("value", (snapshot) => {
+        suggestionBox.innerHTML = "";
+        snapshot.forEach((child) => {
+          const item = child.val();
+          if (
+            item.name.toLowerCase().startsWith(query) ||
+            item.sku.toLowerCase().startsWith(query)
+          ) {
+            const option = document.createElement("div");
+            option.textContent = `${item.name} (${item.sku})`;
+            option.className = "suggestion-item";
+            option.addEventListener("click", () => {
+              input.value = item.name;
+              suggestionBox.innerHTML = "";
+            });
+            suggestionBox.appendChild(option);
+          }
+        });
+      });
+    });
 
-  if (!sku || !name || !qty) return alert("Enter SKU, Name, Quantity");
+    input.addEventListener("blur", () => {
+      setTimeout(() => {
+        suggestionBox.innerHTML = "";
+      }, 200);
+    });
+  }
 
-  productRef.child(sku).once("value", (snap) => {
-    const prev = snap.val();
-    const newQty = prev ? prev.quantity + qty : qty;
-    productRef.child(sku).set({ sku, name, quantity: newQty });
+  setupAutoSuggest(productNameInput, suggestions);
+  setupAutoSuggest(outwardProductInput, outwardSuggestions);
+  setupAutoSuggest(searchInput, searchSuggestions);
 
-    logRef.push({ sku, name, quantity: qty, takenBy: "-", receiver, datetime: getDatetime() });
-    alert("Inward stock added!");
-    refreshSuggestions();
-  });
-}
+  // Inward Stock
+  inwardBtn.addEventListener("click", () => {
+    const name = productNameInput.value.trim();
+    const sku = skuInput.value.trim();
+    const quantity = parseInt(quantityInput.value.trim());
 
-function outwardStock() {
-  const sku = skuVal();
-  const name = nameVal();
-  const qty = +document.getElementById("quantity").value;
-  const takenBy = document.getElementById("takenBy").value.trim();
+    if (!name || !sku || isNaN(quantity)) return alert("Enter valid details");
 
-  if (!sku || !name || !qty) return alert("Enter SKU, Name, Quantity");
-
-  productRef.child(sku).once("value", (snap) => {
-    const prev = snap.val();
-    if (!prev || prev.quantity < qty) return alert("Not enough stock");
-
-    productRef.child(sku).update({ quantity: prev.quantity - qty });
-    logRef.push({ sku, name, quantity: qty, takenBy, receiver: "-", datetime: getDatetime() });
-    alert("Outward stock updated!");
-    refreshSuggestions();
-  });
-}
-
-function skuVal() {
-  return document.getElementById("sku").value.trim();
-}
-
-function nameVal() {
-  return document.getElementById("productName").value.trim();
-}
-
-function searchProduct() {
-  const term = document.getElementById("searchInput").value.toLowerCase();
-  productRef.once("value", (snapshot) => {
-    const div = document.getElementById("productList");
-    div.innerHTML = "";
-    snapshot.forEach((snap) => {
-      const item = snap.val();
-      if (item.name.toLowerCase().startsWith(term) || item.sku.toLowerCase().startsWith(term)) {
-        div.innerHTML += `<p><strong>${item.sku}</strong> - ${item.name} | Qty: ${item.quantity}</p>`;
+    const stockRef = database.ref("stock/" + sku);
+    stockRef.once("value", (snapshot) => {
+      let updatedQuantity = quantity;
+      if (snapshot.exists()) {
+        updatedQuantity += snapshot.val().quantity;
       }
+
+      stockRef.set({
+        name,
+        sku,
+        quantity: updatedQuantity,
+      });
+
+      database.ref("logs").push({
+        type: "inward",
+        name,
+        sku,
+        quantity,
+        receiver: firebase.auth().currentUser.email,
+        takenBy: "-",
+        timestamp: new Date().toLocaleString(),
+      });
+
+      productNameInput.value = "";
+      skuInput.value = "";
+      quantityInput.value = "";
+      loadStock();
     });
   });
-}
 
-function downloadCSV() {
-  logRef.once("value", (snap) => {
-    let csv = "SKU,Name,Quantity,Taken By,Receiver,DateTime\n";
-    snap.forEach((child) => {
-      const d = child.val();
-      csv += `${d.sku || "-"},${d.name || "-"},${d.quantity || 0},${d.takenBy || "-"},${d.receiver || "-"},${d.datetime || "-"}\n`;
+  // Outward Stock
+  outwardBtn.addEventListener("click", () => {
+    const name = outwardProductInput.value.trim();
+    const takenBy = outwardNameInput.value.trim();
+
+    if (!name || !takenBy) return alert("Enter product and name");
+
+    const stockRef = database.ref("stock");
+    stockRef.once("value", (snapshot) => {
+      let found = false;
+      snapshot.forEach((child) => {
+        const item = child.val();
+        if (item.name === name || item.sku === name) {
+          found = true;
+          if (item.quantity > 0) {
+            const updatedQty = item.quantity - 1;
+            database.ref("stock/" + item.sku).update({ quantity: updatedQty });
+
+            database.ref("logs").push({
+              type: "outward",
+              name: item.name,
+              sku: item.sku,
+              quantity: 1,
+              receiver: "-",
+              takenBy: takenBy,
+              timestamp: new Date().toLocaleString(),
+            });
+
+            loadStock();
+            outwardProductInput.value = "";
+            outwardNameInput.value = "";
+          } else {
+            alert("Out of stock!");
+          }
+        }
+      });
+      if (!found) alert("Product not found");
     });
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "stock_log.csv";
-    a.click();
   });
-}
 
-function logout() {
-  firebase.auth().signOut().then(() => location.href = "login.html");
-}
-
-function refreshSuggestions() {
-  productRef.once("value", (snap) => {
-    const skuList = document.getElementById("skuList");
-    const nameList = document.getElementById("nameList");
-    skuList.innerHTML = "";
-    nameList.innerHTML = "";
-    snap.forEach((s) => {
-      const d = s.val();
-      skuList.innerHTML += `<option value="${d.sku}"/>`;
-      nameList.innerHTML += `<option value="${d.name}"/>`;
+  // Search filtering
+  searchInput.addEventListener("input", () => {
+    const query = searchInput.value.toLowerCase();
+    database.ref("stock").once("value", (snapshot) => {
+      tableBody.innerHTML = "";
+      snapshot.forEach((child) => {
+        const item = child.val();
+        if (
+          item.name.toLowerCase().startsWith(query) ||
+          item.sku.toLowerCase().startsWith(query)
+        ) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${item.name}</td>
+            <td>${item.sku}</td>
+            <td>${item.quantity}</td>
+          `;
+          tableBody.appendChild(tr);
+        }
+      });
     });
   });
-}
 
-window.onload = refreshSuggestions;
+  // Export to CSV
+  downloadBtn.addEventListener("click", () => {
+    database.ref("logs").once("value", (snapshot) => {
+      let csv = "Product,Quantity,Taken By,Receiver,Date Time\n";
+      snapshot.forEach((log) => {
+        const item = log.val();
+        csv += `${item.name},${item.quantity},${item.takenBy},${item.receiver},${item.timestamp}\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "stock_logs.csv";
+      link.click();
+    });
+  });
+});
