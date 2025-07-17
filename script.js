@@ -1,141 +1,90 @@
-// Firebase references
-const database = firebase.database();
-const stockRef = database.ref("stock");
-const logsRef = database.ref("logs");
+const db = firebase.database();
 
-// Add or update product (Inward Stock)
-function inwardStock() {
-  const name = document.getElementById("productName").value.trim();
-  const sku = document.getElementById("sku").value.trim();
-  const quantity = parseInt(document.getElementById("quantity").value);
-  const receiver = document.getElementById("receiver").value.trim();
-  const timestamp = new Date().toLocaleString();
+function addStock() {
+  const name = productName.value.trim();
+  const sku = sku.value.trim();
+  const qty = parseInt(quantity.value);
+  const receiver = receiver.value.trim();
 
-  if (!name || !sku || isNaN(quantity) || !receiver) {
-    alert("Please fill in all fields.");
-    return;
-  }
+  if (!name || !sku || !qty || !receiver) return alert("Fill all fields.");
 
-  stockRef.child(sku).once("value", (snapshot) => {
-    const data = snapshot.val();
-    const updatedQty = data ? data.quantity + quantity : quantity;
-
-    stockRef.child(sku).set({
-      name,
-      sku,
-      quantity: updatedQty
+  db.ref("stock/" + sku).get().then(snap => {
+    const currentQty = snap.exists() ? snap.val().quantity : 0;
+    db.ref("stock/" + sku).set({
+      name, sku, quantity: currentQty + qty
     });
 
-    logsRef.push({
-      type: "Inward",
-      name,
-      sku,
-      quantity,
-      receiver,
-      timestamp
+    db.ref("logs").push({
+      type: "inward",
+      name, sku, quantity: qty, receiver,
+      timestamp: new Date().toISOString()
     });
 
-    alert("Stock added/updated.");
-    document.getElementById("productName").value = "";
-    document.getElementById("sku").value = "";
-    document.getElementById("quantity").value = "";
-    document.getElementById("receiver").value = "";
+    alert("Stock added.");
   });
 }
 
-// Remove stock (Outward Stock)
-function outwardStock() {
-  const identifier = document.getElementById("removeProductName").value.trim();
-  const quantity = parseInt(document.getElementById("removeQuantity").value);
-  const takenBy = document.getElementById("takenBy").value.trim();
-  const timestamp = new Date().toLocaleString();
+function removeStock() {
+  const query = removeProduct.value.trim();
+  const qty = parseInt(removeQuantity.value);
+  const takenBy = takenBy.value.trim();
 
-  if (!identifier || isNaN(quantity) || !takenBy) {
-    alert("Please fill in all fields.");
-    return;
-  }
+  if (!query || !qty || !takenBy) return alert("Fill all fields.");
 
-  // Find product by SKU or name
-  stockRef.once("value", (snapshot) => {
-    let found = false;
-    snapshot.forEach((child) => {
-      const data = child.val();
-      if (data.sku === identifier || data.name.toLowerCase() === identifier.toLowerCase()) {
-        found = true;
-        if (data.quantity < quantity) {
-          alert("Not enough stock to remove.");
-        } else {
-          const updatedQty = data.quantity - quantity;
-          stockRef.child(data.sku).update({ quantity: updatedQty });
-
-          logsRef.push({
-            type: "Outward",
-            name: data.name,
-            sku: data.sku,
-            quantity,
-            takenBy,
-            timestamp
-          });
-
-          alert("Stock removed.");
-          document.getElementById("removeProductName").value = "";
-          document.getElementById("removeQuantity").value = "";
-          document.getElementById("takenBy").value = "";
-        }
-      }
+  db.ref("stock").once("value", snap => {
+    let keyFound = null;
+    snap.forEach(child => {
+      const item = child.val();
+      if (item.sku === query || item.name === query) keyFound = child.key;
     });
-    if (!found) alert("Product not found.");
+
+    if (!keyFound) return alert("Item not found.");
+    const item = snap.val()[keyFound];
+    if (item.quantity < qty) return alert("Insufficient stock.");
+
+    db.ref("stock/" + keyFound).update({
+      quantity: item.quantity - qty
+    });
+
+    db.ref("logs").push({
+      type: "outward",
+      name: item.name,
+      sku: item.sku,
+      quantity: qty,
+      takenBy,
+      timestamp: new Date().toISOString()
+    });
+
+    alert("Stock removed.");
   });
 }
 
-// Live search
-document.getElementById("searchInput").addEventListener("input", function () {
-  const query = this.value.trim().toLowerCase();
-  const resultsDiv = document.getElementById("searchResults");
-  resultsDiv.innerHTML = "";
-
-  if (!query) return;
-
-  stockRef.once("value", (snapshot) => {
-    snapshot.forEach((child) => {
-      const data = child.val();
-      if (
-        data.name.toLowerCase().includes(query) ||
-        data.sku.toLowerCase().includes(query)
-      ) {
-        const div = document.createElement("div");
-        div.className = "result";
-        div.innerText = `Name: ${data.name} | SKU: ${data.sku} | Qty: ${data.quantity}`;
-        resultsDiv.appendChild(div);
+function searchProducts() {
+  const q = searchInput.value.toLowerCase();
+  db.ref("stock").once("value", snap => {
+    let html = "";
+    snap.forEach(child => {
+      const item = child.val();
+      if (item.name.toLowerCase().includes(q) || item.sku.toLowerCase().includes(q)) {
+        html += `<div>${item.name} (${item.sku}) - Qty: ${item.quantity}</div>`;
       }
     });
+    document.getElementById("searchResults").innerHTML = html || "No match.";
   });
-});
+}
 
-// CSV Export
 function exportToCSV() {
-  logsRef.once("value", (snapshot) => {
-    let csv = "Type,Name,SKU,Quantity,Receiver/Taken By,Timestamp\n";
-
-    snapshot.forEach((child) => {
+  db.ref("logs").once("value", snap => {
+    let csv = "Type,Name,SKU,Quantity,Person,Timestamp\n";
+    snap.forEach(child => {
       const log = child.val();
-      const row = [
-        log.type,
-        log.name,
-        log.sku,
-        log.quantity,
-        log.receiver || log.takenBy || "",
-        log.timestamp
-      ];
-      csv += row.join(",") + "\n";
+      csv += `${log.type},${log.name},${log.sku},${log.quantity},${log.receiver || log.takenBy},${log.timestamp}\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
+    a.href = URL.createObjectURL(blob);
     a.download = "stock_logs.csv";
     a.click();
-    URL.revokeObjectURL(url);
   });
 }
