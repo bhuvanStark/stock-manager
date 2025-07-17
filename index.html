@@ -48,8 +48,16 @@
     <a href="logs.html"><button>View Logs</button></a>
   </div>
 
-  <script src="firebase-config.js" defer></script>
-<script src="script.js" defer></script>
+  <!-- Firebase v8 SDKs (REQUIRED before your scripts) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<!-- Your Firebase config (initializes firebaseConfig object) -->
+<script src="firebase-config.js"></script>
+
+<!-- Your custom logic -->
+<script src="script.js"></script>
+
 
 </body>
 </html>
