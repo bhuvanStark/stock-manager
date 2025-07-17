@@ -1,49 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Stock Manager - Inward/Outward</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div class="container">
-    <h1>📦 Stock Management System</h1>
-
-    <div class="section">
-      <h2>➕ Inward Stock</h2>
-      <input type="text" id="skuIn" placeholder="SKU" />
-      <input type="text" id="nameIn" placeholder="Product Name" />
-      <input type="number" id="quantityIn" placeholder="Quantity" />
-      <input type="text" id="receiverIn" placeholder="Receiver's Name" />
-      <button onclick="inwardStock()">Add Inward Stock</button>
-    </div>
-
-    <div class="section">
-      <h2>➖ Outward Stock</h2>
-      <input type="text" id="skuOut" placeholder="SKU or Name" oninput="filterProductsOut()" />
-      <input type="number" id="quantityOut" placeholder="Quantity" />
-      <input type="text" id="takenByOut" placeholder="Taken By" />
-      <button onclick="outwardStock()">Remove Outward Stock</button>
-      <ul id="outSuggestionList" class="suggestion-list"></ul>
-    </div>
-
-    <div class="section">
-      <h2>🔍 Search Product</h2>
-      <input type="text" id="searchInput" placeholder="Search by SKU or Name" oninput="filterProductsSearch()" />
-      <ul id="searchResults" class="search-results"></ul>
-    </div>
-
-    <div class="section">
-      <button onclick="exportToCSV()">⬇️ Export to CSV</button>
-      <a href="logs.html" class="log-link">📄 View Logs</a>
-    </div>
-  </div>
-
+  <meta charset="UTF-8">
+  <title>Stock Manager</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Stock Management System</h1>
+
+    <!-- Inward Stock -->
+    <div class="section">
+      <h2>Inward Stock</h2>
+      <input type="text" id="inwardSKU" placeholder="SKU">
+      <input type="text" id="inwardName" placeholder="Product Name">
+      <input type="number" id="inwardQty" placeholder="Quantity">
+      <input type="text" id="inwardReceiver" placeholder="Received By">
+      <button onclick="addOrUpdateProduct()">Submit</button>
+    </div>
+
+    <!-- Outward Stock -->
+    <div class="section">
+      <h2>Outward Stock</h2>
+      <input type="text" id="outwardSearch" placeholder="Search SKU or Product Name">
+      <input type="number" id="outwardQty" placeholder="Quantity to Remove">
+      <input type="text" id="takenBy" placeholder="Taken By">
+      <button onclick="removeProduct()">Submit</button>
+    </div>
+
+    <!-- Search Stock -->
+    <div class="section">
+      <h2>Search Product</h2>
+      <input type="text" id="searchQuery" placeholder="Search SKU or Name" oninput="searchProduct()">
+      <ul id="searchResults"></ul>
+    </div>
+
+    <!-- Export & Logs -->
+    <div class="section">
+      <button onclick="exportToCSV()">Export Logs to CSV</button>
+      <a href="logs.html" class="view-logs-btn">View Logs</a>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
