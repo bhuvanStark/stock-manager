@@ -5,14 +5,6 @@ let productMap = {};
 let productList = {};
 
 
-
-window.onload = function () {
-  loadProductList();
-  loadTable();
-  loadStock();
-  loadProductSuggestions();
-};
-
 // Load productList once
 function loadProductList() {
   firebase.database().ref("products").once("value", snapshot => {
@@ -242,3 +234,10 @@ function exportCSV() {
     a.click();
   });
 }
+
+window.onload = function () {
+  loadProductList();
+  loadTable();
+  loadStock();
+  loadProductSuggestions();
+};
