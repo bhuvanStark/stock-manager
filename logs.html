@@ -2,28 +2,91 @@
 <html>
 <head>
   <title>Stock Logs</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f9f9f9; }
+    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 6px; }
+    input, button { margin: 5px; padding: 6px; }
+    h2 { color: #2d5aa7; }
+  </style>
 </head>
 <body>
-  <h1>Stock Logs</h1>
-  <table id="logsTable">
+
+  <h2>📅 Stock Logs for: <span id="selectedDateLabel"></span></h2>
+  <input type="date" id="logDate" />
+  <button onclick="filterLogsByDate()">Search Logs</button>
+  <button onclick="goBack()">🔙 Back to Dashboard</button>
+
+  <table>
     <thead>
       <tr>
+        <th>Type</th>
         <th>SKU</th>
-        <th>Product Name</th>
-        <th>Quantity</th>
-        <th>Action</th>
-        <th>Person</th>
+        <th>Name</th>
+        <th>Qty</th>
+        <th>Taken By</th>
+        <th>Receiver</th>
         <th>Date-Time</th>
       </tr>
     </thead>
     <tbody id="logsBody"></tbody>
   </table>
 
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="script.js"></script>
+
   <script>
-    window.onload = loadLogs;
+    const logsBody = document.getElementById("logsBody");
+    const dateInput = document.getElementById("logDate");
+    const selectedDateLabel = document.getElementById("selectedDateLabel");
+
+    // Set default date to today
+    const today = new Date();
+    dateInput.valueAsDate = today;
+    selectedDateLabel.textContent = formatDate(today);
+
+    window.onload = () => {
+      filterLogsByDate();
+    };
+
+    function formatDate(date) {
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    function filterLogsByDate() {
+      const selected = new Date(dateInput.value);
+      const dateString = formatDate(selected);
+      selectedDateLabel.textContent = dateString;
+
+      logsBody.innerHTML = "";
+
+      firebase.database().ref("logs").once("value", snapshot => {
+        snapshot.forEach(child => {
+          const log = child.val();
+          if (log.timestamp && log.timestamp.startsWith(dateString)) {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${log.type}</td>
+              <td>${log.sku}</td>
+              <td>${log.name}</td>
+              <td>${log.quantity}</td>
+              <td>${log.takenBy || "-"}</td>
+              <td>${log.receiver || "-"}</td>
+              <td>${log.timestamp}</td>
+            `;
+            logsBody.appendChild(row);
+          }
+        });
+      });
+    }
+
+    function goBack() {
+      window.location.href = "index.html";
+    }
   </script>
 </body>
 </html>
