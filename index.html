@@ -3,9 +3,6 @@
 <head>
   <title>Stock Manager</title>
 
-
-
-  
   <style>
     body { font-family: Arial; padding: 20px; background: #fdfdfd; }
     h2 { color: #3366cc; }
@@ -16,47 +13,43 @@
 <body>
 
   <h2>Inward Stock</h2>
-<input id="sku" placeholder="SKU" list="skuList" oninput="syncSKUName('sku')">
-<input id="name" placeholder="Product Name" list="nameList" oninput="syncSKUName('name')">
-<input id="quantity" type="number" placeholder="Quantity">
-<input id="receiver" placeholder="Received By">
-<datalist id="skuList"></datalist>
-<datalist id="nameList"></datalist>
-<button onclick="inwardStock()">Add Stock</button>
-
+  <input id="sku" placeholder="SKU" list="skuList" oninput="syncSKUName('sku')">
+  <input id="name" placeholder="Product Name" list="nameList" oninput="syncSKUName('name')">
+  <input id="quantity" type="number" placeholder="Quantity">
+  <input id="receiver" placeholder="Received By">
+  <datalist id="skuList"></datalist>
+  <datalist id="nameList"></datalist>
+  <button onclick="inwardStock()">Add Stock</button>
 
   <h2>Outward Stock</h2>
-<input id="out-sku-or-name" placeholder="Enter SKU or Product Name" list="outList">
-<input id="out-qty" type="number" placeholder="Quantity to Remove">
-<input id="out-person" placeholder="Taken By">
-<datalist id="outList"></datalist>
-<button onclick="outwardStock()">Remove Stock</button>
-
-
+  <input id="out-sku-or-name" placeholder="Enter SKU or Product Name" list="outList">
+  <input id="out-qty" type="number" placeholder="Quantity to Remove">
+  <input id="out-person" placeholder="Taken By">
+  <datalist id="outList"></datalist>
+  <button onclick="outwardStock()">Remove Stock</button>
 
   <h2>Current Stock</h2>
   <table id="stockTable">
     <thead>
       <tr><th>SKU</th><th>Name</th><th>Quantity</th></tr>
     </thead>
-    <tbody></tbody>
+    <tbody id="stockTableBody"></tbody>
   </table>
 
   <br>
   <button onclick="exportCSV()">Export Logs to CSV</button>
   <a href="logs.html"><button>View Logs</button></a>
+
   <!-- Firebase Libraries -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-<!-- Your Firebase Config -->
-<script src="firebase-config.js" defer></script>
+  <!-- Firebase Config (must be before main script) -->
+  <script src="firebase-config.js"></script>
 
-<!-- Your Main Script -->
-<script src="script.js" defer></script>
-
+  <!-- Main App Logic -->
+  <script src="script.js"></script>
 
 </body>
 </html>
-
