@@ -3,49 +3,365 @@
 <head>
   <title>Stock Manager</title>
   <style>
-    body { font-family: Arial; padding: 20px; background: #fdfdfd; }
-    h2 { color: #3366cc; }
-    input, button { margin: 5px; padding: 6px; }
-    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 5px; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #FAF7F0;
+      color: #333;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #87CEEB 0%, #B0E0E6 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+      margin-bottom: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 20px rgba(135, 206, 235, 0.3);
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .section {
+      background: white;
+      padding: 25px;
+      margin-bottom: 25px;
+      border-radius: 12px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+      border: 1px solid #E8E8E8;
+    }
+
+    .section h2 { 
+      color: #5A9BD4;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+      border-bottom: 2px solid #87CEEB;
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+
+    input, select, button { 
+      padding: 12px 15px;
+      border: 2px solid #E0E0E0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      font-family: inherit;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #87CEEB;
+      box-shadow: 0 0 0 3px rgba(135, 206, 235, 0.1);
+    }
+
+    input[type="number"] {
+      width: 150px;
+    }
+
+    input[type="text"], input[list] {
+      min-width: 200px;
+      flex: 1;
+    }
+
+    button {
+      background: linear-gradient(135deg, #87CEEB 0%, #5A9BD4 100%);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 12px 25px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #5A9BD4 0%, #4682B4 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(135, 206, 235, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .stock-dropdown {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .dropdown-button {
+      width: 100%;
+      text-align: left;
+      background: white;
+      border: 2px solid #87CEEB;
+      color: #333;
+      padding: 15px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dropdown-button:hover {
+      background: #F0F8FF;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 2px solid #87CEEB;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .dropdown-content.show {
+      display: block;
+    }
+
+    .dropdown-item {
+      padding: 12px 15px;
+      cursor: pointer;
+      border-bottom: 1px solid #F0F0F0;
+      transition: background-color 0.2s ease;
+    }
+
+    .dropdown-item:hover {
+      background: #F0F8FF;
+    }
+
+    .dropdown-item:last-child {
+      border-bottom: none;
+    }
+
+    .stock-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stock-name {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .stock-sku {
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .stock-quantity {
+      background: #87CEEB;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.9em;
+      font-weight: 600;
+    }
+
+    .actions {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .dropdown-arrow {
+      transition: transform 0.3s ease;
+    }
+
+    .dropdown-arrow.rotated {
+      transform: rotate(180deg);
+    }
+
+    @media (max-width: 768px) {
+      .form-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      input, select, button {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+      
+      .actions {
+        flex-direction: column;
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-style: italic;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
+  <div class="container">
+    <div class="header">
+      <h1>Stock Manager</h1>
+      <p>Manage your inventory with ease</p>
+    </div>
 
-  <h2>Inward Stock</h2>
-  <input id="sku" placeholder="SKU" list="skuList" oninput="syncSKUName('sku')">
-  <input id="name" placeholder="Product Name" list="nameList" oninput="syncSKUName('name')">
-  <input id="quantity" type="number" placeholder="Quantity">
-  <input id="receiver" placeholder="Received By">
-  <datalist id="skuList"></datalist>
-  <datalist id="nameList"></datalist>
-  <button onclick="inwardStock()">Add Stock</button>
+    <div class="section">
+      <h2>📦 Inward Stock</h2>
+      <div class="form-group">
+        <input id="sku" placeholder="SKU" list="skuList" oninput="syncSKUName('sku')">
+        <input id="name" placeholder="Product Name" list="nameList" oninput="syncSKUName('name')">
+        <input id="quantity" type="number" placeholder="Quantity" min="1">
+        <input id="receiver" placeholder="Received By">
+        <datalist id="skuList"></datalist>
+        <datalist id="nameList"></datalist>
+      </div>
+      <button onclick="inwardStock()">➕ Add Stock</button>
+    </div>
 
-  <h2>Outward Stock</h2>
-  <input id="out-sku-or-name" placeholder="Enter SKU or Product Name" list="outList">
-  <input id="out-qty" type="number" placeholder="Quantity to Remove">
-  <input id="out-person" placeholder="Taken By">
-  <datalist id="outList"></datalist>
-  <button onclick="outwardStock()">Remove Stock</button>
+    <div class="section">
+      <h2>📤 Outward Stock</h2>
+      <div class="form-group">
+        <input id="out-sku-or-name" placeholder="Enter SKU or Product Name" list="outList">
+        <input id="out-qty" type="number" placeholder="Quantity to Remove" min="1">
+        <input id="out-person" placeholder="Taken By">
+        <datalist id="outList"></datalist>
+      </div>
+      <button onclick="outwardStock()">➖ Remove Stock</button>
+    </div>
 
-  <h2>Current Stock</h2>
-  <table id="stockTable">
-    <thead>
-      <tr><th>SKU</th><th>Name</th><th>Quantity</th></tr>
-    </thead>
-    <tbody id="stockTableBody"></tbody>
-  </table>
+    <div class="section">
+      <h2>📊 Current Stock</h2>
+      <div class="stock-dropdown">
+        <div class="dropdown-button" onclick="toggleStockDropdown()">
+          <span>View Current Stock Items</span>
+          <span class="dropdown-arrow">▼</span>
+        </div>
+        <div id="stockDropdown" class="dropdown-content">
+          <div id="stockItems">
+            <div class="empty-state">No stock items available</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <br>
-  <button onclick="exportCSV()">Export Logs to CSV</button>
-  <a href="logs.html"><button>View Logs</button></a>
+    <div class="section">
+      <h2>🔧 Actions</h2>
+      <div class="actions">
+        <button onclick="exportCSV()">📄 Export Logs to CSV</button>
+        <a href="logs.html"><button>📋 View Logs</button></a>
+      </div>
+    </div>
+  </div>
 
   <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js" defer></script>
-
   <script src="firebase-config.js" defer></script>
-  <script src="script.js" defer></script>
 
+  <script>
+    // Stock dropdown functionality
+    function toggleStockDropdown() {
+      const dropdown = document.getElementById('stockDropdown');
+      const arrow = document.querySelector('.dropdown-arrow');
+      
+      dropdown.classList.toggle('show');
+      arrow.classList.toggle('rotated');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('stockDropdown');
+      const button = document.querySelector('.dropdown-button');
+      
+      if (!button.contains(event.target) && !dropdown.contains(event.target)) {
+        dropdown.classList.remove('show');
+        document.querySelector('.dropdown-arrow').classList.remove('rotated');
+      }
+    });
+
+    // Function to update stock dropdown (replace the table update)
+    function updateStockDisplay() {
+      const stockItems = document.getElementById('stockItems');
+      
+      // This function should be called from your script.js
+      // Replace your existing updateStockTable function with this
+      if (typeof window.stockData !== 'undefined' && window.stockData) {
+        if (Object.keys(window.stockData).length === 0) {
+          stockItems.innerHTML = '<div class="empty-state">No stock items available</div>';
+          return;
+        }
+        
+        let itemsHTML = '';
+        for (const [sku, data] of Object.entries(window.stockData)) {
+          if (data.quantity > 0) {
+            itemsHTML += `
+              <div class="dropdown-item fade-in">
+                <div class="stock-info">
+                  <div>
+                    <div class="stock-name">${data.name}</div>
+                    <div class="stock-sku">SKU: ${sku}</div>
+                  </div>
+                  <div class="stock-quantity">${data.quantity}</div>
+                </div>
+              </div>
+            `;
+          }
+        }
+        
+        stockItems.innerHTML = itemsHTML || '<div class="empty-state">No stock items available</div>';
+      }
+    }
+
+    // Call this function periodically or when stock changes
+    setInterval(updateStockDisplay, 1000);
+  </script>
+  <script src="script.js" defer></script>
 </body>
 </html>
