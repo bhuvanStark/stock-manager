@@ -2,10 +2,14 @@
 
 // Global product list for autosuggestions
 let productList = {};
+let productMap = {}; // Holds { sku: { name, quantity } }
+
 
 window.onload = function () {
   loadProductList();
   loadTable();
+  loadStock();
+  loadProductSuggestions();
 };
 
 // Load productList once
@@ -144,6 +148,58 @@ function loadTable() {
     }
   });
 }
+
+function loadProductSuggestions() {
+  firebase.database().ref("products").once("value").then(snapshot => {
+    const skuList = document.getElementById("skuList");
+    const nameList = document.getElementById("nameList");
+    const outList = document.getElementById("outList");
+
+    skuList.innerHTML = "";
+    nameList.innerHTML = "";
+    outList.innerHTML = "";
+    productMap = {};
+
+    snapshot.forEach(child => {
+      const sku = child.key;
+      const { name, quantity } = child.val();
+      productMap[sku] = { name, quantity };
+
+      const opt1 = document.createElement("option");
+      opt1.value = sku;
+      skuList.appendChild(opt1);
+
+      const opt2 = document.createElement("option");
+      opt2.value = name;
+      nameList.appendChild(opt2);
+
+      const opt3 = document.createElement("option");
+      opt3.value = `${sku} (${name})`;
+      outList.appendChild(opt3);
+    });
+  });
+}
+
+function syncSKUName(changedField) {
+  const skuInput = document.getElementById("sku");
+  const nameInput = document.getElementById("name");
+
+  if (changedField === "sku") {
+    const sku = skuInput.value.trim();
+    if (productMap[sku]) {
+      nameInput.value = productMap[sku].name;
+    }
+  } else if (changedField === "name") {
+    const name = nameInput.value.trim().toLowerCase();
+    for (const [sku, obj] of Object.entries(productMap)) {
+      if (obj.name.toLowerCase() === name) {
+        skuInput.value = sku;
+        break;
+      }
+    }
+  }
+}
+
 
 // Clear all inputs
 function clearFields() {
