@@ -201,6 +201,21 @@ function syncSKUName(changedField) {
   }
 }
 
+function loadStock() {
+  const body = document.getElementById("stockTableBody");
+  body.innerHTML = "";
+  firebase.database().ref("products").once("value", snapshot => {
+    snapshot.forEach(child => {
+      const sku = child.key;
+      const { name, quantity } = child.val();
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${sku}</td><td>${name}</td><td>${quantity}</td>`;
+      body.appendChild(row);
+    });
+  });
+}
+
+
 
 // Clear all inputs
 function clearFields() {
