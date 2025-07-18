@@ -1,8 +1,9 @@
 // script.js
 
 // Global product list for autosuggestions
+let productMap = {}; 
 let productList = {};
-let productMap = {}; // Holds { sku: { name, quantity } }
+
 
 
 window.onload = function () {
