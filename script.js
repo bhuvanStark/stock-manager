@@ -44,37 +44,68 @@ function inwardStock() {
 
 // Outward stock = Remove from stock
 function outwardStock() {
-  const search = document.getElementById("search").value.trim().toLowerCase();
-  const qty = parseInt(document.getElementById("removeQty").value);
-  const takenBy = document.getElementById("takenBy").value.trim();
+  const input = document.getElementById("out-sku-or-name").value.trim();
+  const qty = parseInt(document.getElementById("out-qty").value);
+  const person = document.getElementById("out-person").value.trim();
 
-  if (!search || isNaN(qty) || !takenBy) {
-    alert("Fill all fields correctly.");
+  if (!input || isNaN(qty) || qty <= 0 || !person) {
+    alert("Please enter valid SKU/Name, quantity, and taken by name.");
     return;
   }
 
-  const ref = firebase.database().ref("products");
-  ref.once("value", snapshot => {
-    const products = snapshot.val();
-    for (let sku in products) {
-      const product = products[sku];
-      if (sku.toLowerCase() === search || product.name.toLowerCase() === search) {
-        const newQty = product.quantity - qty;
-        if (newQty < 0) {
-          alert("Not enough stock.");
+  // Fetch all products and try to match SKU or Name
+  firebase.database().ref("products").once("value")
+    .then(snapshot => {
+      let matchedKey = null;
+      let matchedName = null;
+      snapshot.forEach(child => {
+        const key = child.key;
+        const val = child.val();
+        if (key === input || val.name.toLowerCase() === input.toLowerCase()) {
+          matchedKey = key;
+          matchedName = val.name;
+        }
+      });
+
+      if (!matchedKey) {
+        alert("❌ Product not found.");
+        return;
+      }
+
+      const prodRef = firebase.database().ref("products/" + matchedKey);
+      prodRef.once("value").then(snap => {
+        const data = snap.val();
+        if (!data || data.quantity < qty) {
+          alert("❌ Not enough stock to remove.");
           return;
         }
 
-        firebase.database().ref("products/" + sku).update({ quantity: newQty });
-        logTransaction("OUTWARD", sku, product.name, qty, takenBy, "-");
-        loadTable();
-        clearFields();
-        return;
-      }
-    }
-    alert("Product not found.");
-  });
+        const newQty = data.quantity - qty;
+        if (newQty <= 0) {
+          prodRef.remove();
+        } else {
+          prodRef.update({ quantity: newQty });
+        }
+
+        // Log removal
+        const log = {
+          sku: matchedKey,
+          name: matchedName,
+          quantity: qty,
+          action: "OUT",
+          person,
+          timestamp: new Date().toLocaleString()
+        };
+
+        firebase.database().ref("logs").push(log);
+
+        alert("✔️ Stock removed successfully.");
+        loadStock();
+        clearOutwardFields();
+      });
+    });
 }
+
 
 // Log entry in Firebase
 function logTransaction(type, sku, name, qty, takenBy, receiver) {
