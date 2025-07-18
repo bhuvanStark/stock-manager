@@ -29,17 +29,22 @@
 <body>
 
   <h2>Inward Stock</h2>
-  <input id="sku" placeholder="SKU">
-  <input id="name" placeholder="Product Name">
-  <input id="quantity" type="number" placeholder="Quantity">
-  <input id="receiver" placeholder="Received By">
-  <button onclick="inwardStock()">Add Stock</button>
+<input id="sku" placeholder="SKU" list="skuList" oninput="syncSKUName('sku')">
+<input id="name" placeholder="Product Name" list="nameList" oninput="syncSKUName('name')">
+<input id="quantity" type="number" placeholder="Quantity">
+<input id="receiver" placeholder="Received By">
+<datalist id="skuList"></datalist>
+<datalist id="nameList"></datalist>
+<button onclick="inwardStock()">Add Stock</button>
+
 
   <h2>Outward Stock</h2>
-<input id="out-sku-or-name" placeholder="Enter SKU or Product Name">
+<input id="out-sku-or-name" placeholder="Enter SKU or Product Name" list="outList">
 <input id="out-qty" type="number" placeholder="Quantity to Remove">
 <input id="out-person" placeholder="Taken By">
+<datalist id="outList"></datalist>
 <button onclick="outwardStock()">Remove Stock</button>
+
 
 
   <h2>Current Stock</h2>
