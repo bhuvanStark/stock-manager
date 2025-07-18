@@ -2,20 +2,7 @@
 <html>
 <head>
   <title>Stock Manager</title>
-  <!-- Firebase App (Core SDK) -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 
-<!-- Firebase Auth -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-
-<!-- Firebase Realtime Database -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-<!-- Firebase Config (your Firebase project config) -->
-<script defer src="firebase-config.js"></script>
-
-<!-- Your Main App Script -->
-<script defer src="script.js"></script>
 
 
   
@@ -58,6 +45,17 @@
   <br>
   <button onclick="exportCSV()">Export Logs to CSV</button>
   <a href="logs.html"><button>View Logs</button></a>
+  <!-- Firebase Libraries -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js" defer></script>
+
+<!-- Your Firebase Config -->
+<script src="firebase-config.js" defer></script>
+
+<!-- Your Main Script -->
+<script src="script.js" defer></script>
+
 
 </body>
 </html>
