@@ -2,7 +2,6 @@
 <html>
 <head>
   <title>Stock Manager</title>
-
   <style>
     body { font-family: Arial; padding: 20px; background: #fdfdfd; }
     h2 { color: #3366cc; }
@@ -40,16 +39,13 @@
   <button onclick="exportCSV()">Export Logs to CSV</button>
   <a href="logs.html"><button>View Logs</button></a>
 
-  <!-- Firebase Libraries -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js" defer></script>
 
-  <!-- Firebase Config (must be before main script) -->
-  <script src="firebase-config.js"></script>
-
-  <!-- Main App Logic -->
-  <script src="script.js"></script>
+  <script src="firebase-config.js" defer></script>
+  <script src="script.js" defer></script>
 
 </body>
 </html>
