@@ -22,7 +22,10 @@ function loadProductData() {
       nameList.innerHTML += `<option value="${name}">`;
       outList.innerHTML += `<option value="${sku} (${name})">`;
     });
-    updateStockDisplay(); // Update dropdown display
+    // Call updateStockDisplay if it exists (from HTML)
+    if (typeof updateStockDisplay === 'function') {
+      updateStockDisplay();
+    }
   });
 }
 
@@ -117,7 +120,10 @@ function loadStock() {
       const { name, quantity } = child.val();
       window.stockData[sku] = { name, quantity };
     });
-    updateStockDisplay(); // Update dropdown display
+    // Call updateStockDisplay if it exists (from HTML)
+    if (typeof updateStockDisplay === 'function') {
+      updateStockDisplay();
+    }
   });
 }
 
