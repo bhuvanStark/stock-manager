@@ -330,6 +330,8 @@
     function updateStockDisplay() {
       const stockItems = document.getElementById('stockItems');
       
+      if (!stockItems) return; // Safety check
+      
       // This function should be called from your script.js
       // Replace your existing updateStockTable function with this
       if (typeof window.stockData !== 'undefined' && window.stockData) {
@@ -359,8 +361,10 @@
       }
     }
 
-    // Call this function periodically or when stock changes
-    setInterval(updateStockDisplay, 1000);
+    // Initialize stock display when page loads
+    window.addEventListener('load', function() {
+      updateStockDisplay();
+    });
   </script>
   <script src="script.js" defer></script>
 </body>
