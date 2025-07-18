@@ -106,6 +106,13 @@ function outwardStock() {
     });
 }
 
+function clearOutwardFields() {
+  document.getElementById("out-sku-or-name").value = "";
+  document.getElementById("out-qty").value = "";
+  document.getElementById("out-person").value = "";
+}
+
+
 
 // Log entry in Firebase
 function logTransaction(type, sku, name, qty, takenBy, receiver) {
