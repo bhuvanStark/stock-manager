@@ -50,7 +50,7 @@ function inwardStock() {
   });
 }
 
-// Outward Stock (Remove) - DEBUG VERSION
+// Outward Stock (Remove) - COMPLETE FIX
 function outwardStock() {
   const input = document.getElementById("out-sku-or-name").value.trim();
   const qty = parseInt(document.getElementById("out-qty").value);
@@ -61,8 +61,7 @@ function outwardStock() {
     return;
   }
   
-  // Debug: Log what we're searching for
-  console.log("Searching for:", input);
+  console.log("Searching for input:", input);
   
   firebase.database().ref("products").once("value", snapshot => {
     let matchedKey = null;
@@ -73,10 +72,8 @@ function outwardStock() {
       const sku = child.key;
       const data = child.val();
       
-      // Debug: Log each product we're checking
-      console.log("Checking product:", sku, data);
+      console.log("Processing product:", sku, data);
       
-      // Enhanced data validation
       if (data && 
           typeof data === 'object' && 
           data.name && 
@@ -85,44 +82,79 @@ function outwardStock() {
           typeof data.quantity === 'number') {
         
         const { name, quantity } = data;
-        allProducts.push({ sku, name, quantity }); // For debugging
+        allProducts.push({ sku, name, quantity });
         
-        // Additional safety check before toLowerCase()
-        if (name && typeof name === 'string') {
-          const inputLower = input.toLowerCase().trim();
-          const nameLower = name.toLowerCase().trim();
-          const skuLower = sku.toLowerCase().trim();
-          
-          // Debug: Log the comparison
-          console.log("Comparing:", {
-            input: inputLower,
-            sku: skuLower,
-            name: nameLower,
-            skuMatch: skuLower === inputLower,
-            nameMatch: nameLower === inputLower
-          });
-          
-          // More flexible matching
-          if (skuLower === inputLower || nameLower === inputLower) {
-            matchedKey = sku;
-            matchedName = name;
-            console.log("MATCH FOUND:", { sku, name });
-          }
+        const inputLower = input.toLowerCase().trim();
+        const nameLower = name.toLowerCase().trim();
+        const skuLower = sku.toLowerCase().trim();
+        
+        console.log("Comparing:", {
+          input: inputLower,
+          sku: skuLower,
+          name: nameLower
+        });
+        
+        // Check for multiple match patterns
+        let isMatch = false;
+        
+        // Pattern 1: Exact SKU match
+        if (skuLower === inputLower) {
+          isMatch = true;
+          console.log("Match found: Exact SKU");
         }
-      } else {
-        console.log("Invalid data for SKU:", sku, data);
+        
+        // Pattern 2: Exact name match
+        if (nameLower === inputLower) {
+          isMatch = true;
+          console.log("Match found: Exact name");
+        }
+        
+        // Pattern 3: Datalist format "SKU (Name)" - from your HTML
+        const datalistFormat = `${sku.toLowerCase()} (${name.toLowerCase()})`;
+        if (datalistFormat === inputLower) {
+          isMatch = true;
+          console.log("Match found: Datalist format");
+        }
+        
+        // Pattern 4: Partial matches (input contains SKU or name)
+        if (inputLower.includes(skuLower) || inputLower.includes(nameLower)) {
+          isMatch = true;
+          console.log("Match found: Partial match");
+        }
+        
+        // Pattern 5: Extract SKU from formats like "SKU123 (Product Name)"
+        const skuExtractMatch = input.match(/^([^\s\(]+)/);
+        if (skuExtractMatch && skuExtractMatch[1].toLowerCase() === skuLower) {
+          isMatch = true;
+          console.log("Match found: Extracted SKU");
+        }
+        
+        // Pattern 6: Extract name from formats like "SKU123 (Product Name)"
+        const nameExtractMatch = input.match(/\(([^)]+)\)/);
+        if (nameExtractMatch && nameExtractMatch[1].toLowerCase().trim() === nameLower) {
+          isMatch = true;
+          console.log("Match found: Extracted name");
+        }
+        
+        if (isMatch) {
+          matchedKey = sku;
+          matchedName = name;
+          console.log("FINAL MATCH:", { sku, name });
+          return; // Exit the forEach loop
+        }
       }
     });
     
-    // Debug: Show all available products
     console.log("All available products:", allProducts);
-    console.log("Matched product:", { matchedKey, matchedName });
+    console.log("Final match result:", { matchedKey, matchedName });
     
     if (!matchedKey) {
-      alert(`Product not found. Available products: ${allProducts.map(p => `${p.sku} (${p.name})`).join(', ')}`);
+      const productsList = allProducts.map(p => `${p.sku} (${p.name})`).join('\n');
+      alert(`Product not found!\n\nYour input: "${input}"\n\nAvailable products:\n${productsList}`);
       return;
     }
     
+    // Proceed with stock removal
     const ref = firebase.database().ref("products/" + matchedKey);
     ref.once("value", snap => {
       const data = snap.val();
@@ -134,15 +166,21 @@ function outwardStock() {
         alert(`Not enough stock. Available: ${data.quantity}, Requested: ${qty}`);
         return;
       }
+      
       const newQty = data.quantity - qty;
       if (newQty <= 0) {
         ref.remove();
+        console.log("Product removed completely (quantity reached 0)");
       } else {
         ref.update({ quantity: newQty });
+        console.log("Stock updated:", { oldQty: data.quantity, newQty });
       }
+      
       logTransaction("OUTWARD", matchedKey, matchedName, qty, person, "-");
       loadStock();
       clearOutwardFields();
+      alert(`Successfully removed ${qty} units of ${matchedName}`);
+      
     }).catch(error => {
       console.error("Error updating stock:", error);
       alert("Error updating stock. Please try again.");
