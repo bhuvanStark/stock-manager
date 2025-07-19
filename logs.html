@@ -1,91 +1,566 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Stock Logs</title>
+  <title>Tasktel MS - Transaction Logs</title>
   <style>
-    body { font-family: Arial; padding: 20px; background: #f9f9f9; }
-    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 6px; }
-    input, button { margin: 5px; padding: 6px; }
-    h2 { color: #2d5aa7; }
+    body { 
+      font-family: Arial; 
+      padding: 20px; 
+      background: #fefefe; 
+      margin: 0;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: #f7f5f3;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    h2 { 
+      color: #2d5aa7; 
+      margin-bottom: 20px;
+      font-size: 2em;
+      text-align: center;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .controls input, .controls button, .controls select {
+      padding: 10px 15px;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    
+    .controls input:focus, .controls select:focus {
+      border-color: #2d5aa7;
+      outline: none;
+      box-shadow: 0 0 5px rgba(45, 90, 167, 0.3);
+    }
+    
+    .controls button {
+      color: #333;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    
+    /* Default search/filter buttons - Light Sky Blue */
+    .controls button {
+      background: #87ceeb;
+    }
+    
+    .controls button:hover {
+      background: #6bb6d6;
+    }
+    
+    /* Export button - Light Steel Blue */
+    .export-btn {
+      background: #b0c4de !important;
+    }
+    
+    .export-btn:hover {
+      background: #9fb6d3 !important;
+    }
+    
+    /* Back button - Light Blue */
+    .back-btn {
+      background: #add8e6 !important;
+    }
+    
+    .back-btn:hover {
+      background: #98c9d8 !important;
+    }
+    
+    .stats {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .stat-card {
+      background: #f8f9fa;
+      border-left: 4px solid #2d5aa7;
+      padding: 15px 20px;
+      border-radius: 5px;
+      text-align: center;
+      min-width: 150px;
+    }
+    
+    .stat-card h3 {
+      margin: 0 0 5px 0;
+      color: #2d5aa7;
+      font-size: 1.2em;
+    }
+    
+    .stat-card p {
+      margin: 0;
+      font-size: 0.9em;
+      color: #666;
+    }
+    
+    .table-container {
+      overflow-x: auto;
+      background: #f7f5f3;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    table { 
+      width: 100%;
+      border-collapse: collapse; 
+      border: 1px solid #ddd;
+      min-width: 800px;
+    }
+    
+    th, td { 
+      border: 1px solid #ddd; 
+      padding: 12px 8px; 
+      text-align: left;
+      font-size: 13px;
+    }
+    
+    th {
+      background: #87ceeb;
+      color: #333;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+    
+    tr:hover {
+      background-color: #e3f2fd;
+    }
+    
+    .badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    
+    .badge-inward {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .badge-outward {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    .badge-delete {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-style: italic;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #2d5aa7;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin-right: 10px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .alert {
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    
+    .alert-info {
+      background: #e3f2fd;
+      color: #1976d2;
+      border: 1px solid #bbdefb;
+    }
+    
+    .comment-cell {
+      max-width: 200px;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    }
+    
+    .date-cell {
+      white-space: nowrap;
+      font-family: monospace;
+    }
+    
+    @media (max-width: 768px) {
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .controls input, .controls button, .controls select {
+        width: 100%;
+        margin: 5px 0;
+      }
+      
+      .stats {
+        flex-direction: column;
+      }
+      
+      .stat-card {
+        width: 100%;
+      }
+      
+      th, td {
+        padding: 8px 4px;
+        font-size: 12px;
+      }
+    }
   </style>
 </head>
 <body>
+  <div class="container">
+    <h2>📅 Tasktel MS - Transaction Logs</h2>
+    
+    <div class="controls">
+      <input type="date" id="logDate" title="Select date to filter logs" />
+      <input type="text" id="searchBox" placeholder="Search SKU, Name, or Person..." title="Search in logs" />
+      <button onclick="filterLogs()">🔍 Search Logs</button>
+      <button onclick="goBack()" class="back-btn">🔙 Back to Dashboard</button>
+    </div>
 
-  <h2>📅 Stock Logs for: <span id="selectedDateLabel"></span></h2>
-  <input type="date" id="logDate" />
-  <button onclick="filterLogsByDate()">Search Logs</button>
-  <button onclick="goBack()">🔙 Back to Dashboard</button>
+    <div class="stats" id="statsContainer">
+      <div class="stat-card">
+        <h3 id="totalLogs">0</h3>
+        <p>Total Transactions</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="inwardCount">0</h3>
+        <p>Inward Transactions</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="outwardCount">0</h3>
+        <p>Outward Transactions</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="deleteCount">0</h3>
+        <p>Deleted Products</p>
+      </div>
+    </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>SKU</th>
-        <th>Name</th>
-        <th>Qty</th>
-        <th>Taken By</th>
-        <th>Receiver</th>
-        <th>Date-Time</th>
-      </tr>
-    </thead>
-    <tbody id="logsBody"></tbody>
-  </table>
+    <div class="alert alert-info" id="selectedDateLabel">
+      📊 Showing logs for: <span id="dateDisplay">All dates</span>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>SKU</th>
+            <th>Product Name</th>
+            <th>Qty</th>
+            <th>Person</th>
+            <th>Entry Date</th>
+            <th>Comments</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="logsBody">
+          <tr>
+            <td colspan="8" class="loading">
+              <div class="spinner"></div>
+              Loading transaction logs...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
-
+  
   <script>
     const logsBody = document.getElementById("logsBody");
     const dateInput = document.getElementById("logDate");
-    const selectedDateLabel = document.getElementById("selectedDateLabel");
-
+    const searchBox = document.getElementById("searchBox");
+    const dateDisplay = document.getElementById("dateDisplay");
+    
+    let allLogs = []; // Store all logs for filtering
+    
     // Set default date to today
     const today = new Date();
     dateInput.valueAsDate = today;
-    selectedDateLabel.textContent = formatDate(today);
-
+    
     window.onload = () => {
-      filterLogsByDate();
+      loadAllLogs();
     };
-
+    
     function formatDate(date) {
       const day = date.getDate();
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
       return `${day}/${month}/${year}`;
     }
-
-    function filterLogsByDate() {
-      const selected = new Date(dateInput.value);
-      const dateString = formatDate(selected);
-      selectedDateLabel.textContent = dateString;
-
-      logsBody.innerHTML = "";
-
+    
+    function formatDateForFilter(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return formatDate(date);
+    }
+    
+    function loadAllLogs() {
+      logsBody.innerHTML = '<tr><td colspan="8" class="loading"><div class="spinner"></div>Loading transaction logs...</td></tr>';
+      
       firebase.database().ref("logs").once("value", snapshot => {
+        allLogs = [];
         snapshot.forEach(child => {
           const log = child.val();
-          if (log.timestamp && log.timestamp.startsWith(dateString)) {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-              <td>${log.type}</td>
-              <td>${log.sku}</td>
-              <td>${log.name}</td>
-              <td>${log.quantity}</td>
-              <td>${log.takenBy || "-"}</td>
-              <td>${log.receiver || "-"}</td>
-              <td>${log.timestamp}</td>
-            `;
-            logsBody.appendChild(row);
+          if (log) {
+            allLogs.push({
+              ...log,
+              id: child.key
+            });
           }
         });
+        
+        // Sort logs by timestamp (newest first)
+        allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        updateStats();
+        filterLogs(); // Apply initial filter
+      }).catch(error => {
+        console.error("Error loading logs:", error);
+        logsBody.innerHTML = '<tr><td colspan="8" class="empty-state">❌ Error loading logs. Please refresh the page.</td></tr>';
       });
     }
-
+    
+    function updateStats() {
+      const totalLogs = allLogs.length;
+      const inwardCount = allLogs.filter(log => log.type === 'INWARD').length;
+      const outwardCount = allLogs.filter(log => log.type === 'OUTWARD').length;
+      const deleteCount = allLogs.filter(log => log.type === 'DELETE').length;
+      
+      document.getElementById('totalLogs').textContent = totalLogs;
+      document.getElementById('inwardCount').textContent = inwardCount;
+      document.getElementById('outwardCount').textContent = outwardCount;
+      document.getElementById('deleteCount').textContent = deleteCount;
+    }
+    
+    function filterLogs() {
+      const selectedDate = dateInput.value;
+      const searchTerm = searchBox.value.toLowerCase().trim();
+      
+      let filteredLogs = allLogs;
+      
+      // Filter by date
+      if (selectedDate) {
+        const filterDateString = formatDateForFilter(selectedDate);
+        filteredLogs = filteredLogs.filter(log => {
+          // Check both entry date and timestamp
+          const entryDateMatch = log.entryDate === selectedDate;
+          const timestampMatch = log.timestamp && log.timestamp.includes(filterDateString);
+          return entryDateMatch || timestampMatch;
+        });
+        dateDisplay.textContent = formatDateForFilter(selectedDate);
+      } else {
+        dateDisplay.textContent = "All dates";
+      }
+      
+      // Filter by search term
+      if (searchTerm) {
+        filteredLogs = filteredLogs.filter(log => {
+          return (
+            (log.sku && log.sku.toLowerCase().includes(searchTerm)) ||
+            (log.name && log.name.toLowerCase().includes(searchTerm)) ||
+            (log.takenBy && log.takenBy.toLowerCase().includes(searchTerm)) ||
+            (log.receiver && log.receiver.toLowerCase().includes(searchTerm)) ||
+            (log.comment && log.comment.toLowerCase().includes(searchTerm))
+          );
+        });
+      }
+      
+      displayLogs(filteredLogs);
+    }
+    
+    function displayLogs(logs) {
+      logsBody.innerHTML = "";
+      
+      if (logs.length === 0) {
+        logsBody.innerHTML = '<tr><td colspan="8" class="empty-state">📭 No logs found matching your criteria.</td></tr>';
+        return;
+      }
+      
+      logs.forEach(log => {
+        const row = document.createElement("tr");
+        
+        // Determine badge class for transaction type
+        let badgeClass = 'badge';
+        switch(log.type) {
+          case 'INWARD':
+            badgeClass += ' badge-inward';
+            break;
+          case 'OUTWARD':
+            badgeClass += ' badge-outward';
+            break;
+          case 'DELETE':
+            badgeClass += ' badge-delete';
+            break;
+        }
+        
+        // Get the person (either takenBy or receiver)
+        let person = '-';
+        if (log.type === 'INWARD' && log.receiver && log.receiver !== '-') {
+          person = log.receiver;
+        } else if ((log.type === 'OUTWARD' || log.type === 'DELETE') && log.takenBy && log.takenBy !== '-') {
+          person = log.takenBy;
+        }
+        
+        row.innerHTML = `
+          <td><span class="${badgeClass}">${log.type}</span></td>
+          <td><code>${log.sku || '-'}</code></td>
+          <td><strong>${log.name || '-'}</strong></td>
+          <td><strong>${log.quantity || '-'}</strong></td>
+          <td>${person}</td>
+          <td class="date-cell">${log.entryDate || '-'}</td>
+          <td class="comment-cell">${log.comment || '-'}</td>
+          <td class="date-cell">${log.timestamp || '-'}</td>
+        `;
+        logsBody.appendChild(row);
+      });
+    }
+    
+    function exportFilteredCSV() {
+      const selectedDate = dateInput.value;
+      const selectedType = typeFilter.value;
+      const searchTerm = searchBox.value.toLowerCase().trim();
+      
+      let filteredLogs = allLogs;
+      
+      // Apply same filters as display
+      if (selectedDate) {
+        const filterDateString = formatDateForFilter(selectedDate);
+        filteredLogs = filteredLogs.filter(log => {
+          const entryDateMatch = log.entryDate === selectedDate;
+          const timestampMatch = log.timestamp && log.timestamp.includes(filterDateString);
+          return entryDateMatch || timestampMatch;
+        });
+      }
+      
+      if (selectedType) {
+        filteredLogs = filteredLogs.filter(log => log.type === selectedType);
+      }
+      
+      if (searchTerm) {
+        filteredLogs = filteredLogs.filter(log => {
+          return (
+            (log.sku && log.sku.toLowerCase().includes(searchTerm)) ||
+            (log.name && log.name.toLowerCase().includes(searchTerm)) ||
+            (log.takenBy && log.takenBy.toLowerCase().includes(searchTerm)) ||
+            (log.receiver && log.receiver.toLowerCase().includes(searchTerm)) ||
+            (log.comment && log.comment.toLowerCase().includes(searchTerm))
+          );
+        });
+      }
+      
+      if (filteredLogs.length === 0) {
+        alert("No data to export with current filters.");
+        return;
+      }
+      
+      // Generate CSV
+      let csvContent = "Type,SKU,Name,Quantity,Person,Receiver,Entry Date,Comments,Timestamp\n";
+      
+      filteredLogs.forEach(log => {
+        const escapeCSV = (str) => {
+          if (str === null || str === undefined) return '"-"';
+          str = String(str);
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        };
+        
+        const person = log.type === 'INWARD' ? (log.receiver || '-') : (log.takenBy || '-');
+        
+        csvContent += `${escapeCSV(log.type)},${escapeCSV(log.sku)},${escapeCSV(log.name)},${escapeCSV(log.quantity)},${escapeCSV(person)},${escapeCSV(log.receiver || "-")},${escapeCSV(log.entryDate || "-")},${escapeCSV(log.comment || "-")},${escapeCSV(log.timestamp)}\n`;
+      });
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Generate filename based on filters
+      let filename = 'stock_logs';
+      if (selectedDate) filename += `_${selectedDate}`;
+      if (selectedType) filename += `_${selectedType.toLowerCase()}`;
+      if (searchTerm) filename += `_filtered`;
+      filename += '.csv';
+      
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      alert(`CSV exported successfully! (${filteredLogs.length} records)`);
+    }
+    
     function goBack() {
       window.location.href = "index.html";
+    }
+    
+    // Add event listeners for real-time filtering
+    dateInput.addEventListener('change', filterLogs);
+    searchBox.addEventListener('input', debounce(filterLogs, 300));
+    
+    // Debounce function to limit search frequency
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
     }
   </script>
 </body>
