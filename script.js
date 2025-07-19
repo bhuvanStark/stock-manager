@@ -1,4 +1,4 @@
-// script.js - TASKTEL MS COMPLETE VERSION
+// script.js - TASKTEL MS FIXED VERSION
 let productMap = {}; // For syncing and suggestions
 window.stockData = {}; // Global stock data for dropdown
 
@@ -7,6 +7,8 @@ function loadProductData() {
   firebase.database().ref("products").once("value", snapshot => {
     productMap = {};
     window.stockData = {}; // Update global stock data
+    
+    // Clear existing datalists
     const skuList = document.getElementById("skuList");
     const nameList = document.getElementById("nameList");
     const outList = document.getElementById("outList");
@@ -17,34 +19,53 @@ function loadProductData() {
     if (outList) outList.innerHTML = "";
     if (deleteList) deleteList.innerHTML = "";
     
+    let productCount = 0;
+    
     snapshot.forEach(child => {
       const sku = child.key;
       const data = child.val();
       if (data && data.name && typeof data.quantity === 'number') {
         const { name, quantity } = data;
         productMap[sku] = { name, quantity };
-        window.stockData[sku] = { name, quantity }; // Update global stock data
+        window.stockData[sku] = { name, quantity };
+        productCount++;
         
-        if (skuList) skuList.innerHTML += `<option value="${sku}">`;
-        if (nameList) nameList.innerHTML += `<option value="${name}">`;
+        // Add to datalists with proper HTML escaping
+        const escapedSku = sku.replace(/"/g, "&quot;");
+        const escapedName = name.replace(/"/g, "&quot;");
+        
+        if (skuList) {
+          skuList.innerHTML += `<option value="${escapedSku}"></option>`;
+        }
+        if (nameList) {
+          nameList.innerHTML += `<option value="${escapedName}"></option>`;
+        }
         if (outList) {
-          outList.innerHTML += `<option value="${sku}">`;
-          outList.innerHTML += `<option value="${name}">`;
-          outList.innerHTML += `<option value="${sku} (${name})">`;
+          outList.innerHTML += `<option value="${escapedSku}"></option>`;
+          outList.innerHTML += `<option value="${escapedName}"></option>`;
+          outList.innerHTML += `<option value="${escapedSku} (${escapedName})"></option>`;
         }
         if (deleteList) {
-          deleteList.innerHTML += `<option value="${sku}">`;
-          deleteList.innerHTML += `<option value="${name}">`;
-          deleteList.innerHTML += `<option value="${sku} (${name})">`;
+          deleteList.innerHTML += `<option value="${escapedSku}"></option>`;
+          deleteList.innerHTML += `<option value="${escapedName}"></option>`;
+          deleteList.innerHTML += `<option value="${escapedSku} (${escapedName})"></option>`;
         }
       }
     });
     
-    console.log("Product data loaded:", Object.keys(productMap).length, "products");
+    console.log("Product data loaded:", productCount, "products");
+    console.log("ProductMap:", productMap);
+    
+    // Call updateStockDisplay if it exists (for compatibility)
+    if (typeof updateStockDisplay === 'function') {
+      updateStockDisplay();
+    }
   }).catch(error => {
     console.error("Error loading product data:", error);
     if (typeof showAlert === 'function') {
       showAlert("Error loading product data. Please refresh the page.", "error");
+    } else {
+      alert("Error loading product data. Please refresh the page.");
     }
   });
 }
