@@ -50,8 +50,7 @@ function inwardStock() {
   });
 }
 
-
-// Outward Stock (Remove) - FIXED VERSION
+// Outward Stock (Remove) - DEBUG VERSION
 function outwardStock() {
   const input = document.getElementById("out-sku-or-name").value.trim();
   const qty = parseInt(document.getElementById("out-qty").value);
@@ -62,39 +61,65 @@ function outwardStock() {
     return;
   }
   
+  // Debug: Log what we're searching for
+  console.log("Searching for:", input);
+  
   firebase.database().ref("products").once("value", snapshot => {
     let matchedKey = null;
     let matchedName = null;
+    let allProducts = []; // For debugging
     
     snapshot.forEach(child => {
       const sku = child.key;
       const data = child.val();
+      
+      // Debug: Log each product we're checking
+      console.log("Checking product:", sku, data);
       
       // Enhanced data validation
       if (data && 
           typeof data === 'object' && 
           data.name && 
           typeof data.name === 'string' && 
-          data.name.trim() !== '' && // Ensure name is not empty
+          data.name.trim() !== '' && 
           typeof data.quantity === 'number') {
         
         const { name, quantity } = data;
+        allProducts.push({ sku, name, quantity }); // For debugging
         
         // Additional safety check before toLowerCase()
         if (name && typeof name === 'string') {
-          const inputLower = input.toLowerCase();
-          const nameLower = name.toLowerCase();
+          const inputLower = input.toLowerCase().trim();
+          const nameLower = name.toLowerCase().trim();
+          const skuLower = sku.toLowerCase().trim();
           
-          if (sku === input || nameLower === inputLower) {
+          // Debug: Log the comparison
+          console.log("Comparing:", {
+            input: inputLower,
+            sku: skuLower,
+            name: nameLower,
+            skuMatch: skuLower === inputLower,
+            nameMatch: nameLower === inputLower
+          });
+          
+          // More flexible matching
+          if (skuLower === inputLower || nameLower === inputLower) {
             matchedKey = sku;
             matchedName = name;
+            console.log("MATCH FOUND:", { sku, name });
           }
         }
+      } else {
+        console.log("Invalid data for SKU:", sku, data);
       }
     });
     
+    // Debug: Show all available products
+    console.log("All available products:", allProducts);
+    console.log("Matched product:", { matchedKey, matchedName });
+    
     if (!matchedKey) {
-      alert("Product not found.");
+      alert(`Product not found. Available products: ${allProducts.map(p => `${p.sku} (${p.name})`).join(', ')}`);
       return;
     }
     
@@ -106,7 +131,7 @@ function outwardStock() {
         return;
       }
       if (data.quantity < qty) {
-        alert("Not enough stock.");
+        alert(`Not enough stock. Available: ${data.quantity}, Requested: ${qty}`);
         return;
       }
       const newQty = data.quantity - qty;
@@ -127,7 +152,6 @@ function outwardStock() {
     alert("Error processing outward stock. Please try again.");
   });
 }
-
 // Sync SKU ↔ Name when user types one of them
 function syncSKUName(field) {
   const skuInput = document.getElementById("sku");
