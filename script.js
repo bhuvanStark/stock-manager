@@ -64,10 +64,13 @@ function outwardStock() {
     let matchedName = null;
     snapshot.forEach(child => {
       const sku = child.key;
-      const { name, quantity } = child.val();
-      if (sku === input || name.toLowerCase() === input.toLowerCase()) {
-        matchedKey = sku;
-        matchedName = name;
+      const data = child.val();
+      if (data && data.name && typeof data.quantity === 'number') {
+        const { name, quantity } = data;
+        if (sku === input || name.toLowerCase() === input.toLowerCase()) {
+          matchedKey = sku;
+          matchedName = name;
+        }
       }
     });
     if (!matchedKey) {
@@ -77,6 +80,10 @@ function outwardStock() {
     const ref = firebase.database().ref("products/" + matchedKey);
     ref.once("value", snap => {
       const data = snap.val();
+      if (!data || typeof data.quantity !== 'number') {
+        alert("Product data error.");
+        return;
+      }
       if (data.quantity < qty) {
         alert("Not enough stock.");
         return;
@@ -88,6 +95,9 @@ function outwardStock() {
       loadStock();
       clearOutwardFields();
     });
+  }).catch(error => {
+    console.error("Error in outward stock:", error);
+    alert("Error processing outward stock. Please try again.");
   });
 }
 
@@ -95,15 +105,22 @@ function outwardStock() {
 function syncSKUName(field) {
   const skuInput = document.getElementById("sku");
   const nameInput = document.getElementById("name");
+  
+  if (!skuInput || !nameInput) return; // Safety check
+  
   if (field === "sku") {
     const sku = skuInput.value.trim();
-    if (productMap[sku]) {
+    if (productMap[sku] && productMap[sku].name) {
       nameInput.value = productMap[sku].name;
     }
   } else if (field === "name") {
-    const name = nameInput.value.trim().toLowerCase();
+    const name = nameInput.value.trim();
+    if (!name) return; // Don't process empty names
+    
+    const nameLower = name.toLowerCase();
     for (const sku in productMap) {
-      if (productMap[sku].name.toLowerCase() === name) {
+      if (productMap[sku] && productMap[sku].name && 
+          productMap[sku].name.toLowerCase() === nameLower) {
         skuInput.value = sku;
         break;
       }
@@ -117,13 +134,18 @@ function loadStock() {
     window.stockData = {}; // Reset global stock data
     snapshot.forEach(child => {
       const sku = child.key;
-      const { name, quantity } = child.val();
-      window.stockData[sku] = { name, quantity };
+      const data = child.val();
+      if (data && data.name && typeof data.quantity === 'number') {
+        const { name, quantity } = data;
+        window.stockData[sku] = { name, quantity };
+      }
     });
     // Call updateStockDisplay if it exists (from HTML)
     if (typeof updateStockDisplay === 'function') {
       updateStockDisplay();
     }
+  }).catch(error => {
+    console.error("Error loading stock:", error);
   });
 }
 
