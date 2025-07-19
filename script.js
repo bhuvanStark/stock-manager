@@ -50,7 +50,8 @@ function inwardStock() {
   });
 }
 
-// Outward Stock (Remove)
+
+// Outward Stock (Remove) - FIXED VERSION
 function outwardStock() {
   const input = document.getElementById("out-sku-or-name").value.trim();
   const qty = parseInt(document.getElementById("out-qty").value);
@@ -69,17 +70,25 @@ function outwardStock() {
       const sku = child.key;
       const data = child.val();
       
-      // Comprehensive data validation
-      if (data && typeof data === 'object' && data.name && typeof data.name === 'string' && typeof data.quantity === 'number') {
+      // Enhanced data validation
+      if (data && 
+          typeof data === 'object' && 
+          data.name && 
+          typeof data.name === 'string' && 
+          data.name.trim() !== '' && // Ensure name is not empty
+          typeof data.quantity === 'number') {
+        
         const { name, quantity } = data;
         
-        // Safe comparison with proper validation
-        const inputLower = input.toLowerCase();
-        const nameLower = name.toLowerCase();
-        
-        if (sku === input || nameLower === inputLower) {
-          matchedKey = sku;
-          matchedName = name;
+        // Additional safety check before toLowerCase()
+        if (name && typeof name === 'string') {
+          const inputLower = input.toLowerCase();
+          const nameLower = name.toLowerCase();
+          
+          if (sku === input || nameLower === inputLower) {
+            matchedKey = sku;
+            matchedName = name;
+          }
         }
       }
     });
