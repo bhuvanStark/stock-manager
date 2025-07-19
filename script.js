@@ -55,28 +55,40 @@ function outwardStock() {
   const input = document.getElementById("out-sku-or-name").value.trim();
   const qty = parseInt(document.getElementById("out-qty").value);
   const person = document.getElementById("out-person").value.trim();
+  
   if (!input || isNaN(qty) || qty <= 0 || !person) {
     alert("Please fill all fields.");
     return;
   }
+  
   firebase.database().ref("products").once("value", snapshot => {
     let matchedKey = null;
     let matchedName = null;
+    
     snapshot.forEach(child => {
       const sku = child.key;
       const data = child.val();
-      if (data && data.name && typeof data.quantity === 'number') {
+      
+      // Comprehensive data validation
+      if (data && typeof data === 'object' && data.name && typeof data.name === 'string' && typeof data.quantity === 'number') {
         const { name, quantity } = data;
-        if (sku === input || name.toLowerCase() === input.toLowerCase()) {
+        
+        // Safe comparison with proper validation
+        const inputLower = input.toLowerCase();
+        const nameLower = name.toLowerCase();
+        
+        if (sku === input || nameLower === inputLower) {
           matchedKey = sku;
           matchedName = name;
         }
       }
     });
+    
     if (!matchedKey) {
       alert("Product not found.");
       return;
     }
+    
     const ref = firebase.database().ref("products/" + matchedKey);
     ref.once("value", snap => {
       const data = snap.val();
@@ -89,11 +101,17 @@ function outwardStock() {
         return;
       }
       const newQty = data.quantity - qty;
-      if (newQty <= 0) ref.remove();
-      else ref.update({ quantity: newQty });
+      if (newQty <= 0) {
+        ref.remove();
+      } else {
+        ref.update({ quantity: newQty });
+      }
       logTransaction("OUTWARD", matchedKey, matchedName, qty, person, "-");
       loadStock();
       clearOutwardFields();
+    }).catch(error => {
+      console.error("Error updating stock:", error);
+      alert("Error updating stock. Please try again.");
     });
   }).catch(error => {
     console.error("Error in outward stock:", error);
