@@ -26,6 +26,165 @@
       text-align: center;
     }
     
+    h3 {
+      color: #2d5aa7;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+      border-bottom: 2px solid #87ceeb;
+      padding-bottom: 10px;
+    }
+    
+    .section {
+      background: #f7f5f3;
+      border-radius: 10px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .stock-controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .stock-controls input {
+      flex: 1;
+      min-width: 250px;
+      padding: 10px 15px;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    
+    .stock-controls input:focus {
+      border-color: #87ceeb;
+      outline: none;
+      box-shadow: 0 0 5px rgba(135, 206, 235, 0.3);
+    }
+    
+    .refresh-btn {
+      background: #90d4aa !important;
+      color: #333;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    
+    .refresh-btn:hover {
+      background: #7bc297 !important;
+    }
+    
+    .stock-container {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: white;
+      padding: 15px;
+    }
+    
+    .stock-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      border-bottom: 1px solid #eee;
+      transition: background-color 0.3s;
+    }
+    
+    .stock-item:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .stock-item:last-child {
+      border-bottom: none;
+    }
+    
+    .stock-details {
+      flex: 1;
+    }
+    
+    .stock-name {
+      font-weight: bold;
+      color: #2d5aa7;
+      font-size: 1.1em;
+      margin-bottom: 3px;
+    }
+    
+    .stock-sku {
+      color: #666;
+      font-size: 0.9em;
+      font-family: 'Courier New', monospace;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+    
+    .stock-quantity {
+      background: linear-gradient(135deg, #87ceeb, #6bb6d6);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 1.1em;
+      min-width: 60px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .stock-quantity.low {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+    
+    .stock-quantity.critical {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+    
+    .stock-empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #666;
+      font-style: italic;
+    }
+    
+    .stock-stats {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .stock-stat {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      border-left: 4px solid #87ceeb;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-align: center;
+      min-width: 120px;
+    }
+    
+    .stock-stat-value {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: #2d5aa7;
+      margin-bottom: 5px;
+    }
+    
+    .stock-stat-label {
+      font-size: 0.9em;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
     .controls {
       display: flex;
       gap: 15px;
@@ -232,12 +391,16 @@
         align-items: stretch;
       }
       
-      .controls input, .controls button, .controls select {
+      .stock-controls input, .controls input, .controls button, .controls select {
         width: 100%;
         margin: 5px 0;
       }
       
       .stats {
+        flex-direction: column;
+      }
+      
+      .stock-stats {
         flex-direction: column;
       }
       
@@ -255,6 +418,27 @@
 <body>
   <div class="container">
     <h2>📅 Tasktel MS - Transaction Logs</h2>
+    
+    <!-- Current Stock Section -->
+    <div class="section">
+      <h3>📦 Tasktel MS - Current Stock</h3>
+      
+      <div class="stock-controls">
+        <input type="text" id="stockSearch" placeholder="Search by SKU or Product Name..." title="Search current stock" />
+        <button onclick="refreshStock()" class="refresh-btn">🔄 Refresh Stock</button>
+      </div>
+
+      <div class="stock-container" id="stockContainer">
+        <div class="loading">
+          <div class="spinner"></div>
+          Loading current stock...
+        </div>
+      </div>
+    </div>
+    
+    <!-- Transaction Logs Section -->
+    <div class="section">
+      <h3>📋 Transaction History</h3>
     
     <div class="controls">
       <input type="date" id="logDate" title="Select date to filter logs" />
@@ -322,16 +506,167 @@
     const dateInput = document.getElementById("logDate");
     const searchBox = document.getElementById("searchBox");
     const dateDisplay = document.getElementById("dateDisplay");
+    const stockContainer = document.getElementById("stockContainer");
+    const stockSearch = document.getElementById("stockSearch");
     
     let allLogs = []; // Store all logs for filtering
+    let allStock = []; // Store all stock for filtering
     
     // Set default date to today
     const today = new Date();
     dateInput.valueAsDate = today;
     
     window.onload = () => {
+      console.log("Logs page loaded");
+      
+      // Check if Firebase is loaded
+      if (typeof firebase === 'undefined') {
+        console.error("Firebase not loaded!");
+        logsBody.innerHTML = '<tr><td colspan="8" class="empty-state">❌ Firebase not loaded. Please refresh the page.</td></tr>';
+        stockContainer.innerHTML = '<div class="stock-empty-state">❌ Firebase not loaded. Please refresh the page.</div>';
+        return;
+      }
+      
+      console.log("Firebase available, loading data...");
       loadAllLogs();
+      loadCurrentStock();
     };
+    
+    // Load current stock data
+    function loadCurrentStock() {
+      stockContainer.innerHTML = '<div class="loading"><div class="spinner"></div>Loading current stock...</div>';
+      
+      firebase.database().ref("products").once("value", snapshot => {
+        allStock = [];
+        
+        if (!snapshot.exists()) {
+          console.log("No products found in database");
+          displayStock([]);
+          return;
+        }
+        
+        snapshot.forEach(child => {
+          const sku = child.key;
+          const data = child.val();
+          if (data && data.name && typeof data.quantity === 'number') {
+            allStock.push({
+              sku: sku,
+              name: data.name,
+              quantity: data.quantity
+            });
+          }
+        });
+        
+        console.log("Loaded stock items:", allStock.length);
+        
+        // Sort by name alphabetically
+        allStock.sort((a, b) => a.name.localeCompare(b.name));
+        
+        displayStock(allStock);
+        
+      }).catch(error => {
+        console.error("Error loading stock:", error);
+        stockContainer.innerHTML = '<div class="stock-empty-state">❌ Error loading stock data. Please refresh the page.</div>';
+      });
+    }
+    
+    // Display stock items
+    function displayStock(stockItems) {
+      if (!stockItems || stockItems.length === 0) {
+        stockContainer.innerHTML = '<div class="stock-empty-state">📭 No stock items found.</div>';
+        return;
+      }
+      
+      // Calculate stats
+      const totalProducts = stockItems.length;
+      const totalStock = stockItems.reduce((sum, item) => sum + item.quantity, 0);
+      const lowStockItems = stockItems.filter(item => item.quantity <= 5 && item.quantity > 0).length;
+      const outOfStockItems = stockItems.filter(item => item.quantity === 0).length;
+      
+      let stockHTML = `
+        <div class="stock-stats">
+          <div class="stock-stat">
+            <div class="stock-stat-value">${totalProducts}</div>
+            <div class="stock-stat-label">Total Products</div>
+          </div>
+          <div class="stock-stat">
+            <div class="stock-stat-value">${totalStock}</div>
+            <div class="stock-stat-label">Total Stock</div>
+          </div>
+          <div class="stock-stat">
+            <div class="stock-stat-value">${lowStockItems}</div>
+            <div class="stock-stat-label">Low Stock</div>
+          </div>
+          <div class="stock-stat">
+            <div class="stock-stat-value">${outOfStockItems}</div>
+            <div class="stock-stat-label">Out of Stock</div>
+          </div>
+        </div>
+        <div class="stock-list">
+      `;
+      
+      stockItems.forEach(item => {
+        // Determine quantity status for styling
+        let quantityClass = 'stock-quantity';
+        if (item.quantity === 0) {
+          quantityClass += ' critical';
+        } else if (item.quantity <= 5) {
+          quantityClass += ' low';
+        }
+        
+        // Safely escape HTML content
+        const escapeHtml = (str) => {
+          return String(str).replace(/[&<>"']/g, function (s) {
+            return {
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#39;'
+            }[s];
+          });
+        };
+        
+        stockHTML += `
+          <div class="stock-item">
+            <div class="stock-details">
+              <div class="stock-name">${escapeHtml(item.name)}</div>
+              <div class="stock-sku">SKU: ${escapeHtml(item.sku)}</div>
+            </div>
+            <div class="${quantityClass}">${item.quantity}</div>
+          </div>
+        `;
+      });
+      
+      stockHTML += '</div>';
+      stockContainer.innerHTML = stockHTML;
+    }
+    
+    // Filter stock based on search
+    function filterStock() {
+      const searchTerm = stockSearch.value.toLowerCase().trim();
+      
+      if (!searchTerm) {
+        displayStock(allStock);
+        return;
+      }
+      
+      const filteredStock = allStock.filter(item => {
+        return (
+          item.sku.toLowerCase().includes(searchTerm) ||
+          item.name.toLowerCase().includes(searchTerm)
+        );
+      });
+      
+      console.log(`Filtered stock: ${filteredStock.length} items found for "${searchTerm}"`);
+      displayStock(filteredStock);
+    }
+    
+    // Refresh stock data
+    function refreshStock() {
+      console.log("Refreshing stock data...");
+      loadCurrentStock();
+    }
     
     function formatDate(date) {
       const day = date.getDate();
@@ -351,21 +686,49 @@
       
       firebase.database().ref("logs").once("value", snapshot => {
         allLogs = [];
+        
+        if (!snapshot.exists()) {
+          console.log("No logs found in database");
+          logsBody.innerHTML = '<tr><td colspan="8" class="empty-state">📭 No transaction logs found.</td></tr>';
+          updateStats();
+          return;
+        }
+        
         snapshot.forEach(child => {
           const log = child.val();
           if (log) {
-            allLogs.push({
-              ...log,
-              id: child.key
-            });
+            // Ensure all required fields exist
+            const completeLog = {
+              id: child.key,
+              type: log.type || 'UNKNOWN',
+              sku: log.sku || '-',
+              name: log.name || '-',
+              quantity: log.quantity || 0,
+              takenBy: log.takenBy || '-',
+              receiver: log.receiver || '-',
+              comment: log.comment || '-',
+              entryDate: log.entryDate || '-',
+              timestamp: log.timestamp || new Date().toLocaleString()
+            };
+            allLogs.push(completeLog);
           }
         });
         
+        console.log("Loaded logs:", allLogs.length);
+        
         // Sort logs by timestamp (newest first)
-        allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        allLogs.sort((a, b) => {
+          const dateA = new Date(a.timestamp);
+          const dateB = new Date(b.timestamp);
+          return dateB - dateA;
+        });
         
         updateStats();
-        filterLogs(); // Apply initial filter
+        
+        // Show all logs initially
+        dateDisplay.textContent = "All dates";
+        displayLogs(allLogs);
+        
       }).catch(error => {
         console.error("Error loading logs:", error);
         logsBody.innerHTML = '<tr><td colspan="8" class="empty-state">❌ Error loading logs. Please refresh the page.</td></tr>';
@@ -388,15 +751,26 @@
       const selectedDate = dateInput.value;
       const searchTerm = searchBox.value.toLowerCase().trim();
       
-      let filteredLogs = allLogs;
+      let filteredLogs = [...allLogs]; // Create a copy
+      
+      console.log("Filtering logs. Total logs:", filteredLogs.length);
+      console.log("Selected date:", selectedDate);
+      console.log("Search term:", searchTerm);
       
       // Filter by date
       if (selectedDate) {
         const filterDateString = formatDateForFilter(selectedDate);
+        console.log("Filter date string:", filterDateString);
+        
         filteredLogs = filteredLogs.filter(log => {
           // Check both entry date and timestamp
           const entryDateMatch = log.entryDate === selectedDate;
           const timestampMatch = log.timestamp && log.timestamp.includes(filterDateString);
+          
+          if (entryDateMatch || timestampMatch) {
+            console.log("Date match found:", log);
+          }
+          
           return entryDateMatch || timestampMatch;
         });
         dateDisplay.textContent = formatDateForFilter(selectedDate);
@@ -407,28 +781,38 @@
       // Filter by search term
       if (searchTerm) {
         filteredLogs = filteredLogs.filter(log => {
-          return (
+          const searchMatch = (
             (log.sku && log.sku.toLowerCase().includes(searchTerm)) ||
             (log.name && log.name.toLowerCase().includes(searchTerm)) ||
             (log.takenBy && log.takenBy.toLowerCase().includes(searchTerm)) ||
             (log.receiver && log.receiver.toLowerCase().includes(searchTerm)) ||
             (log.comment && log.comment.toLowerCase().includes(searchTerm))
           );
+          
+          if (searchMatch) {
+            console.log("Search match found:", log);
+          }
+          
+          return searchMatch;
         });
       }
       
+      console.log("Filtered logs:", filteredLogs.length);
       displayLogs(filteredLogs);
     }
     
     function displayLogs(logs) {
+      console.log("Displaying logs:", logs.length);
       logsBody.innerHTML = "";
       
-      if (logs.length === 0) {
+      if (!logs || logs.length === 0) {
         logsBody.innerHTML = '<tr><td colspan="8" class="empty-state">📭 No logs found matching your criteria.</td></tr>';
         return;
       }
       
-      logs.forEach(log => {
+      logs.forEach((log, index) => {
+        console.log(`Rendering log ${index}:`, log);
+        
         const row = document.createElement("tr");
         
         // Determine badge class for transaction type
@@ -443,6 +827,8 @@
           case 'DELETE':
             badgeClass += ' badge-delete';
             break;
+          default:
+            badgeClass += ' badge-inward'; // fallback
         }
         
         // Get the person (either takenBy or receiver)
@@ -453,18 +839,34 @@
           person = log.takenBy;
         }
         
+        // Safely escape HTML content
+        const escapeHtml = (str) => {
+          if (!str || str === '-') return '-';
+          return String(str).replace(/[&<>"']/g, function (s) {
+            return {
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#39;'
+            }[s];
+          });
+        };
+        
         row.innerHTML = `
-          <td><span class="${badgeClass}">${log.type}</span></td>
-          <td><code>${log.sku || '-'}</code></td>
-          <td><strong>${log.name || '-'}</strong></td>
-          <td><strong>${log.quantity || '-'}</strong></td>
-          <td>${person}</td>
-          <td class="date-cell">${log.entryDate || '-'}</td>
-          <td class="comment-cell">${log.comment || '-'}</td>
-          <td class="date-cell">${log.timestamp || '-'}</td>
+          <td><span class="${badgeClass}">${escapeHtml(log.type)}</span></td>
+          <td><code>${escapeHtml(log.sku)}</code></td>
+          <td><strong>${escapeHtml(log.name)}</strong></td>
+          <td><strong>${escapeHtml(log.quantity)}</strong></td>
+          <td>${escapeHtml(person)}</td>
+          <td class="date-cell">${escapeHtml(log.entryDate)}</td>
+          <td class="comment-cell">${escapeHtml(log.comment)}</td>
+          <td class="date-cell">${escapeHtml(log.timestamp)}</td>
         `;
         logsBody.appendChild(row);
       });
+      
+      console.log("Finished rendering", logs.length, "log rows");
     }
     
     function exportFilteredCSV() {
@@ -549,6 +951,7 @@
     // Add event listeners for real-time filtering
     dateInput.addEventListener('change', filterLogs);
     searchBox.addEventListener('input', debounce(filterLogs, 300));
+    stockSearch.addEventListener('input', debounce(filterStock, 300));
     
     // Debounce function to limit search frequency
     function debounce(func, wait) {
