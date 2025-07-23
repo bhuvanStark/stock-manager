@@ -1,4 +1,4 @@
-// script.js - TASKTEL MS FIXED VERSION
+// script.js - TASKTEL MS COMPLETE VERSION WITH STOCK DISPLAY SUPPORT
 let productMap = {}; // For syncing and suggestions
 window.stockData = {}; // Global stock data for dropdown
 
@@ -440,7 +440,7 @@ function syncSKUName(field) {
   }
 }
 
-// Load stock (simplified version)
+// Load stock (works with both index.html and logs.html)
 function loadStock() {
   firebase.database().ref("products").once("value", snapshot => {
     window.stockData = {}; // Reset global stock data
@@ -454,6 +454,11 @@ function loadStock() {
     });
     
     console.log("Stock data loaded:", Object.keys(window.stockData).length, "products");
+    
+    // If we're on logs.html page, refresh the stock display
+    if (typeof loadCurrentStock === 'function') {
+      loadCurrentStock();
+    }
   }).catch(error => {
     console.error("Error loading stock:", error);
     if (typeof showAlert === 'function') {
@@ -561,6 +566,27 @@ function exportCSV() {
       alert("Error exporting CSV. Please try again.");
     }
   });
+}
+
+// FUNCTIONS FOR LOGS.HTML STOCK DISPLAY COMPATIBILITY
+// These functions are called from logs.html for stock management
+
+// Load current stock for logs.html page
+function loadCurrentStock() {
+  // This function is defined in logs.html script section
+  // Just ensure our global stockData is available
+  console.log("loadCurrentStock called - ensuring stock data is available");
+  
+  if (Object.keys(window.stockData).length === 0) {
+    console.log("No stock data available, loading from Firebase...");
+    loadStock();
+  }
+}
+
+// Refresh stock for logs.html page
+function refreshStock() {
+  console.log("refreshStock called from logs.html");
+  loadStock();
 }
 
 // Initialize when page loads
