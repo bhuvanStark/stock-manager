@@ -175,8 +175,12 @@
         alert("Firebase not loaded!");
         return;
       }
+      
+      // Set the date picker to today's date by default
+      document.getElementById('logDate').valueAsDate = new Date();
+      
       loadCurrentStock();
-      loadAllLogs();
+      loadAllLogs(); // This will fetch all logs and then trigger the filter for today
       
       document.getElementById('stockSearch').addEventListener('input', () => displayStock(allStock));
       document.getElementById('searchBox').addEventListener('input', filterLogs);
@@ -230,8 +234,12 @@
             allLogs.push(child.val());
           });
         }
+        // Sort newest first by timestamp for internal consistency
         allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        displayLogs(allLogs);
+        
+        // Instead of displaying all logs, immediately filter them.
+        // Since the date input is set to today, this will show today's logs by default.
+        filterLogs(); 
       });
     }
 
@@ -240,19 +248,22 @@
         const searchTerm = document.getElementById("searchBox").value.toLowerCase().trim();
         
         const filtered = allLogs.filter(log => {
-            const dateMatch = !selectedDate || log.date === selectedDate;
+            // If a date is selected, filter by that date. If the date is cleared, show all.
+            const dateMatch = selectedDate ? log.date === selectedDate : true;
+            
             const searchMatch = !searchTerm ||
                 Object.values(log).some(val => 
                     String(val).toLowerCase().includes(searchTerm)
                 );
             return dateMatch && searchMatch;
         });
+        
         displayLogs(filtered);
     }
 
     function displayLogs(logs) {
       if (logs.length === 0) {
-        logsBody.innerHTML = '<tr><td colspan="9" class="empty-state">No logs found.</td></tr>';
+        logsBody.innerHTML = '<tr><td colspan="9" class="empty-state">No logs found for the selected criteria.</td></tr>';
         return;
       }
       
