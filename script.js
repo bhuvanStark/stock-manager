@@ -1,4 +1,4 @@
-// script.js - TASKTEL MS DEMO/SERVICE STOCK VERSION (v3.3 - Definitive Fix)
+// script.js - TASKTEL MS DEMO/SERVICE STOCK VERSION (v3.4 - CSV Sort Fix)
 let productMap = {}; // Maps product names to their data
 
 // Load all products into productMap and <datalist> suggestions
@@ -86,30 +86,22 @@ function outwardStock() {
     return;
   }
 
-  // Use the exact name from the input to reference the product in the database.
-  // This is reliable when using a datalist.
   const ref = firebase.database().ref("products/" + nameInput);
 
   ref.transaction(currentData => {
     if (currentData === null) {
-      // If the direct lookup fails, it means the product doesn't exist under that exact name.
-      // We return a special value to indicate this specific failure.
       return { abortReason: "not_found" };
     }
     if (currentData.quantity < qty) {
-      // Not enough stock, abort.
       return { abortReason: "insufficient_stock", available: currentData.quantity };
     }
     const newQty = currentData.quantity - qty;
-    // Return the new value, or null to delete the product if stock is zero.
     return newQty > 0 ? { quantity: newQty } : null;
   }, (error, committed, snapshot) => {
     if (error) {
       showAlert("A database error occurred. Please try again.", "error");
       console.error("Transaction failed:", error);
     } else if (!committed) {
-      // The transaction was aborted by our logic.
-      // We check the `abortReason` we set.
       ref.once('value', (snap) => {
         const data = snap.val();
         if (data && data.abortReason) {
@@ -118,16 +110,13 @@ function outwardStock() {
           } else if (data.abortReason === "insufficient_stock") {
             showAlert(`Transaction failed: Not enough stock for ${nameInput}. Available: ${data.available}, Requested: ${qty}`, "error");
           }
-          // Clean up the abort reason from the database
           ref.child('abortReason').remove();
           if(data.available) ref.child('available').remove();
         } else {
-            // Fallback for other abort reasons (e.g. not enough stock from the initial check)
             showAlert(`Transaction failed. Please check stock and try again.`, "error");
         }
       });
     } else {
-      // The transaction was successful.
       const remainingQty = snapshot.exists() ? snapshot.val().quantity : 0;
       logTransaction("OUTWARD", nameInput, qty, person, "-", outwardDate, dcNo, serialNumber, customerDetails);
       showAlert(`Successfully removed ${qty} of ${nameInput}. Remaining stock: ${remainingQty}`, "success");
@@ -216,12 +205,33 @@ function getCurrentDate() {
   return new Date().toISOString().split('T')[0];
 }
 
-// Export CSV function
+// Export CSV function - UPDATED
 function exportCSV() {
   firebase.database().ref("logs").once("value", snapshot => {
-    let csvContent = "Type,Product Name,Quantity,Person,Date,DC No,Serial Number,Customer Details,Timestamp\n";
+    if (!snapshot.exists()) {
+      showAlert("No logs to export.", "warning");
+      return;
+    }
+
+    let logsArray = [];
     snapshot.forEach(child => {
-      const log = child.val();
+      logsArray.push(child.val());
+    });
+
+    // Sort the logs by date (YYYY-MM-DD format is string-sortable)
+    logsArray.sort((a, b) => {
+      const dateA = a.date || '0000-00-00';
+      const dateB = b.date || '0000-00-00';
+      if (dateA === dateB) {
+        // If dates are the same, sort by timestamp
+        return new Date(a.timestamp) - new Date(b.timestamp);
+      }
+      return dateA.localeCompare(dateB);
+    });
+
+    let csvContent = "Type,Product Name,Quantity,Person,Date,DC No,Serial Number,Customer Details,Timestamp\n";
+    
+    logsArray.forEach(log => {
       const escapeCSV = (str) => {
         if (str === null || str === undefined) return '""';
         str = String(str);
@@ -247,6 +257,7 @@ function exportCSV() {
     showAlert("Error exporting CSV.", "error");
   });
 }
+
 
 // A simple alert function to replace the native one
 function showAlert(message, type = 'success') {
