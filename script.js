@@ -1,4 +1,4 @@
-// script.js - TASKTEL MS DEMO/SERVICE STOCK VERSION
+// script.js - TASKTEL MS DEMO/SERVICE STOCK VERSION (v3.2 - Robust Matching Fix)
 let productMap = {}; // Maps product names to their data
 
 // Load all products into productMap and <datalist> suggestions
@@ -11,7 +11,7 @@ function loadProductData() {
     let productCount = 0;
     
     snapshot.forEach(child => {
-      const productName = child.key; // Product name is now the key
+      const productName = child.key; // Product name is the key
       const data = child.val();
       if (data && typeof data.quantity === 'number') {
         productMap[productName] = { quantity: data.quantity };
@@ -50,7 +50,7 @@ function inwardStock() {
     if (currentData === null) {
       return { quantity: qty };
     } else {
-      return { quantity: currentData.quantity + qty };
+      return { quantity: (currentData.quantity || 0) + qty };
     }
   }, (error, committed, snapshot) => {
     if (error) {
@@ -65,9 +65,9 @@ function inwardStock() {
   });
 }
 
-// OUTWARD STOCK FUNCTION (Remove)
+// OUTWARD STOCK FUNCTION (Remove) - REWRITTEN FOR RELIABILITY
 function outwardStock() {
-  const name = document.getElementById("out-name").value.trim();
+  const nameInput = document.getElementById("out-name").value;
   const qty = parseInt(document.getElementById("out-qty").value);
   const person = document.getElementById("out-person").value.trim();
   const outwardDate = document.getElementById("outward-date").value;
@@ -75,36 +75,67 @@ function outwardStock() {
   const serialNumber = document.getElementById("outward-serial").value.trim();
   const customerDetails = document.getElementById("outward-customer").value.trim();
 
-  if (!name || isNaN(qty) || qty <= 0 || !person || !customerDetails) {
-    showAlert("Please fill all fields: Product Name, Quantity, Taken By, and Customer Details.", "error");
+  if (!nameInput || isNaN(qty) || qty <= 0 || !person || !customerDetails) {
+    showAlert("Please fill all required fields: Product Name, Quantity, Taken By, and Customer Details.", "error");
     return;
   }
 
-  const ref = firebase.database().ref("products/" + name); // Use name as the key
-  ref.transaction(currentData => {
-    if (currentData === null) {
-      showAlert(`Product "${name}" not found in inventory.`, "error");
-      return; // Abort transaction
+  // First, find the exact key of the product, ignoring case and trimming whitespace for user-friendliness.
+  firebase.database().ref("products").once("value", snapshot => {
+    let matchedKey = null;
+    const cleanedNameInput = nameInput.trim().toLowerCase(); // Clean the input once
+
+    snapshot.forEach(child => {
+      const cleanedKey = child.key.trim().toLowerCase(); // Clean the database key for comparison
+      if (cleanedKey === cleanedNameInput) {
+        matchedKey = child.key; // Store the original, correctly-cased key
+      }
+    });
+
+    if (!matchedKey) {
+      showAlert(`Product "${nameInput}" not found in inventory. Please select a valid product from the list.`, "error");
+      console.log(`Failed match. Input was: "${cleanedNameInput}". Checked against database keys.`);
+      return;
     }
-    if (currentData.quantity < qty) {
-      showAlert(`Not enough stock! Available: ${currentData.quantity}, Requested: ${qty}`, "error");
-      return; // Abort transaction
-    }
-    const newQty = currentData.quantity - qty;
-    // If quantity becomes 0 or less, remove the product
-    return newQty > 0 ? { quantity: newQty } : null;
-  }, (error, committed, snapshot) => {
-    if (error) {
-      showAlert("Error removing stock. Please try again.", "error");
-    } else if (committed) {
-      const remainingQty = snapshot.val() ? snapshot.val().quantity : 0;
-      logTransaction("OUTWARD", name, qty, person, "-", outwardDate, dcNo, serialNumber, customerDetails);
-      showAlert(`Successfully removed ${qty} of ${name}. Remaining stock: ${remainingQty}`, "success");
-      loadProductData();
-      clearOutwardFields();
-    }
+
+    // Now, perform the atomic transaction using the correct key.
+    const ref = firebase.database().ref("products/" + matchedKey);
+    ref.transaction(currentData => {
+      if (currentData === null) {
+        return 0; // Abort: Product was deleted by another user.
+      }
+      if (currentData.quantity < qty) {
+        return; // Abort: Not enough stock. Return undefined.
+      }
+      const newQty = currentData.quantity - qty;
+      return newQty > 0 ? { quantity: newQty } : null; // Return new value or null to delete the product node.
+    }, (error, committed, snapshot) => {
+      if (error) {
+        showAlert("A database error occurred. Please try again.", "error");
+        console.error("Transaction failed: ", error);
+      } else if (!committed) {
+        ref.once("value", currentSnapshot => {
+            const currentQty = currentSnapshot.exists() ? currentSnapshot.val().quantity : 0;
+            if (currentQty < qty) {
+                showAlert(`Transaction failed: Not enough stock for ${matchedKey}. Available: ${currentQty}, Requested: ${qty}`, "error");
+            } else {
+                showAlert(`Transaction failed. The product might have been modified. Please try again.`, "error");
+            }
+        });
+      } else {
+        const remainingQty = snapshot.exists() ? snapshot.val().quantity : 0;
+        logTransaction("OUTWARD", matchedKey, qty, person, "-", outwardDate, dcNo, serialNumber, customerDetails);
+        showAlert(`Successfully removed ${qty} of ${matchedKey}. Remaining stock: ${remainingQty}`, "success");
+        loadProductData();
+        clearOutwardFields();
+      }
+    });
+  }).catch(err => {
+      showAlert("Could not connect to the database to verify product.", "error");
+      console.error(err);
   });
 }
+
 
 // DELETE PRODUCT FUNCTION
 function deleteProduct() {
@@ -141,7 +172,6 @@ function deleteProduct() {
         });
     });
 }
-
 
 // Log a transaction to Firebase
 function logTransaction(type, name, quantity, takenBy, receiver, date, dcNo, serialNumber, customerDetails) {
@@ -215,6 +245,12 @@ function exportCSV() {
   }).catch(error => {
     showAlert("Error exporting CSV.", "error");
   });
+}
+
+// A simple alert function to replace the native one
+function showAlert(message, type = 'success') {
+    console.log(`Alert (${type}): ${message}`);
+    alert(message);
 }
 
 // Initialize when page loads
