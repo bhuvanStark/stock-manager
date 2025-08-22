@@ -1,63 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tasktel MS - Demo/Service Stock</title>
+  
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- A placeholder, will use inline SVG for reliability -->
+
+  <style>
+    :root {
+      --primary-color: #2d5aa7;
+      --primary-hover: #244784;
+      --secondary-color: #6c757d;
+      --success-color: #198754;
+      --danger-color: #dc3545;
+      --warning-color: #ffc107;
+      --light-bg: #f8f9fa;
+      --white: #ffffff;
+      --border-color: #dee2e6;
+      --text-dark: #212529;
+      --text-light: #6c757d;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --border-radius: 0.5rem;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--light-bg);
+      color: var(--text-dark);
+      padding: 1.5rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .header h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+    
+    .header h1 svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .header p {
+        margin-top: 0.5rem;
+        color: var(--text-light);
+        font-size: 1.1rem;
+    }
+
+    .section {
+      background: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      border-top: 4px solid var(--primary-color);
+    }
+    
+    .section.outward { border-top-color: #0d6efd; }
+    .section.delete { border-top-color: var(--danger-color); }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .section-header svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .section-header h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: var(--text-dark);
+      font-size: 0.9rem;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    textarea,
+    datalist {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(45, 90, 167, 0.15);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    .btn:active {
+        transform: translateY(0);
+    }
+
+    .btn-primary { background-color: var(--primary-color); color: var(--white); }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+    
+    .btn-outward { background-color: #0d6efd; color: var(--white); }
+    .btn-outward:hover { background-color: #0b5ed7; }
+
+    .btn-secondary { background-color: var(--secondary-color); color: var(--white); }
+    .btn-secondary:hover { background-color: #5a6268; }
+    
+    .btn-danger { background-color: var(--danger-color); color: var(--white); }
+    .btn-danger:hover { background-color: #bb2d3b; }
+
+    .alert-warning {
+      background-color: #fff3cd;
+      color: #664d03;
+      padding: 1rem;
+      border-radius: var(--border-radius);
+      border: 1px solid #ffecb5;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-section {
+      text-align: center;
+      padding: 1.5rem;
+    }
+    
+    .nav-section .btn {
+        background-color: var(--success-color);
+        color: var(--white);
+    }
+    .nav-section .btn:hover {
+        background-color: #157347;
+    }
+    .nav-section a {
+        text-decoration: none;
+    }
+
+  </style>
+</head>
 <body>
   <div class="container">
-    <h1>📦 Tasktel MS - Demo/Service Stock</h1>
+    <header class="header">
+      <h1>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 7L16 3L12 7L8 3L4 7V20C4 20.5523 4.44772 21 5 21H19C19.5523 21 20 20.5523 20 20V7ZM11 15H13V17H11V15ZM11 9H13V13H11V9ZM6 7.828L8 5.828L10 7.828V19H6V7.828ZM18 19H14V7.828L16 5.828L18 7.828V19Z"></path></svg>
+        Tasktel MS
+      </h1>
+      <p>Demo & Service Stock Management</p>
+    </header>
     
-    <div class="section">
-      <h2>📥 Inward Stock (Add/Update)</h2>
-      <div class="form-row">
-        <input type="text" id="name" placeholder="Product Name" list="nameList" style="width: 300px;">
-        <input type="number" id="quantity" placeholder="Quantity" min="1">
-        <input type="text" id="receiver" placeholder="Received By">
+    <!-- Inward Stock Section -->
+    <div class="section inward">
+      <div class="section-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="color: var(--primary-color);"><path d="M11 2.05005V13.05H13V2.05005C16.947 2.55005 20.5 6.05305 20.5 10.5C20.5 15.747 16.247 20 11 20C5.753 20 1.5 15.747 1.5 10.5C1.5 6.05305 5.053 2.55005 9 2.05005H11Z"></path></svg>
+        <h2>Inward Stock (Add/Update)</h2>
       </div>
-      <div class="form-row">
-        <input type="date" id="entry-date" class="date-input" title="Stock Entry Date">
-        <input type="text" id="inward-serial" placeholder="Serial Number (optional)" style="width: 200px;">
-        <textarea id="inward-customer" placeholder="Customer Name & Address (optional)" class="comment-input"></textarea>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="name">Product Name</label>
+          <input type="text" id="name" placeholder="e.g., iPhone 14 Pro" list="nameList">
+        </div>
+        <div class="form-group">
+          <label for="quantity">Quantity</label>
+          <input type="number" id="quantity" placeholder="1" min="1">
+        </div>
+        <div class="form-group">
+          <label for="receiver">Received By</label>
+          <input type="text" id="receiver" placeholder="Your Name">
+        </div>
+        <div class="form-group">
+          <label for="entry-date">Entry Date</label>
+          <input type="date" id="entry-date" title="Stock Entry Date">
+        </div>
+        <div class="form-group">
+          <label for="inward-serial">Serial Number (optional)</label>
+          <input type="text" id="inward-serial" placeholder="SN123456789">
+        </div>
+        <div class="form-group full-width">
+          <label for="inward-customer">Customer Name & Address (optional)</label>
+          <textarea id="inward-customer" placeholder="From whom the product was received"></textarea>
+        </div>
       </div>
-       <div class="form-row">
-        <button onclick="inwardStock()">📥 Add Stock</button>
-        <button onclick="clearFields()" class="export-btn">🔄 Clear</button>
+      <div class="form-actions">
+        <button onclick="inwardStock()" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add Stock
+        </button>
+        <button onclick="clearFields()" class="btn btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            Clear
+        </button>
       </div>
       <datalist id="nameList"></datalist>
     </div>
     
-    <div class="section">
-      <h2>📤 Outward Stock (Remove for Demo/Service)</h2>
-      <div class="form-row">
-        <input type="text" id="out-name" placeholder="Product Name" list="nameList" style="width: 300px;">
-        <input type="number" id="out-qty" placeholder="Quantity" min="1">
-        <input type="text" id="out-person" placeholder="Taken By">
+    <!-- Outward Stock Section -->
+    <div class="section outward">
+      <div class="section-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="color: #0d6efd;"><path d="M13 2.05005V13.05H11V2.05005C7.053 2.55005 3.5 6.05305 3.5 10.5C3.5 15.747 7.753 20 13 20C18.247 20 22.5 15.747 22.5 10.5C22.5 6.05305 18.947 2.55005 15 2.05005H13Z"></path></svg>
+        <h2>Outward Stock (Demo/Service)</h2>
       </div>
-      <div class="form-row">
-        <input type="date" id="outward-date" class="date-input" title="Outward Stock Date">
-        <input type="text" id="out-dc" placeholder="DC No.">
-        <input type="text" id="outward-serial" placeholder="Serial Number (optional)" style="width: 200px;">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="out-name">Product Name</label>
+          <input type="text" id="out-name" placeholder="e.g., iPhone 14 Pro" list="nameList">
+        </div>
+        <div class="form-group">
+          <label for="out-qty">Quantity</label>
+          <input type="number" id="out-qty" placeholder="1" min="1">
+        </div>
+        <div class="form-group">
+          <label for="out-person">Taken By</label>
+          <input type="text" id="out-person" placeholder="Your Name">
+        </div>
+        <div class="form-group">
+          <label for="outward-date">Outward Date</label>
+          <input type="date" id="outward-date" title="Outward Stock Date">
+        </div>
+        <div class="form-group">
+          <label for="out-dc">DC No.</label>
+          <input type="text" id="out-dc" placeholder="DC001">
+        </div>
+        <div class="form-group">
+          <label for="outward-serial">Serial Number (optional)</label>
+          <input type="text" id="outward-serial" placeholder="SN123456789">
+        </div>
+        <div class="form-group full-width">
+          <label for="outward-customer">Customer Name & Address</label>
+          <textarea id="outward-customer" placeholder="John Doe, 123 Main St, Anytown"></textarea>
+        </div>
       </div>
-      <div class="form-row">
-        <textarea id="outward-customer" placeholder="Customer Name & Address" class="comment-input"></textarea>
-        <button onclick="outwardStock()">📤 Remove Stock</button>
-        <button onclick="clearOutwardFields()" class="export-btn">🔄 Clear</button>
+      <div class="form-actions">
+        <button onclick="outwardStock()" class="btn btn-outward">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Remove Stock
+        </button>
+        <button onclick="clearOutwardFields()" class="btn btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            Clear
+        </button>
       </div>
     </div>
     
-    <div class="section">
-      <h2>🗑️ Delete Product</h2>
-      <div class="alert alert-warning">
-        ⚠️ Warning: This will permanently delete the product from inventory. This action cannot be undone.
+    <!-- Delete Product Section -->
+    <div class="section delete">
+      <div class="section-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="color: var(--danger-color);"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM9 4V6H15V4H9Z"></path></svg>
+        <h2>Delete Product</h2>
       </div>
-      <div class="form-row">
-        <input type="text" id="delete-product" placeholder="Enter Product Name" list="nameList" style="width: 300px;">
-        <textarea id="delete-comment" placeholder="Reason for deletion (optional)" class="comment-input"></textarea>
-        <button onclick="deleteProduct()" class="delete-btn">🗑️ Delete Product</button>
+      <div class="alert-warning">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        <span>This will permanently delete the product and its entire stock from inventory. This action cannot be undone.</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="delete-product">Product Name</label>
+          <input type="text" id="delete-product" placeholder="Enter Product Name to delete" list="nameList">
+        </div>
+        <div class="form-group">
+          <label for="delete-comment">Reason for deletion (optional)</label>
+          <textarea id="delete-comment" placeholder="e.g., Product discontinued"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button onclick="deleteProduct()" class="btn btn-danger">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            Delete Product
+        </button>
       </div>
     </div>
     
-    <div class="nav-buttons">
-      <a href="logs.html">📅 View Transaction Logs</a>
-      <button onclick="exportCSV()" class="export-btn">📄 Export All Logs (CSV)</button>
+    <!-- Navigation and Export Section -->
+    <div class="nav-section">
+        <a href="logs.html" class="btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            View Transaction Logs
+        </a>
+        <button onclick="exportCSV()" class="btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Export All Logs (CSV)
+        </button>
     </div>
   </div>
 
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
@@ -67,5 +375,14 @@
     // Set default entry dates to today
     document.getElementById('entry-date').valueAsDate = new Date();
     document.getElementById('outward-date').valueAsDate = new Date();
+
+    // A simple alert function to replace the native one if needed
+    function showAlert(message, type = 'success') {
+        // You can build a custom, non-blocking notification system here
+        console.log(`Alert (${type}): ${message}`);
+        // For now, we'll use the browser's alert for critical feedback
+        alert(message);
+    }
   </script>
 </body>
+</html>
