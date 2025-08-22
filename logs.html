@@ -1,23 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tasktel MS - Logs & Stock</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-color: #2d5aa7;
+      --success-color: #198754;
+      --light-bg: #f8f9fa;
+      --white: #ffffff;
+      --border-color: #dee2e6;
+      --text-dark: #212529;
+      --text-light: #6c757d;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --border-radius: 0.5rem;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--light-bg);
+      color: var(--text-dark);
+      padding: 1.5rem;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 2.5rem; }
+    .header h1 { font-size: 2.25rem; font-weight: 700; color: var(--primary-color); }
+    .header p { margin-top: 0.5rem; color: var(--text-light); font-size: 1.1rem; }
+    .section {
+      background: var(--white);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .section-header h2 { font-size: 1.5rem; font-weight: 600; }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .controls input, .controls .btn {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+    }
+    .controls .btn {
+      border: none;
+      cursor: pointer;
+      background-color: var(--primary-color);
+      color: var(--white);
+      font-weight: 600;
+    }
+    .btn-secondary { background-color: #6c757d; }
+    .stock-container { max-height: 400px; overflow-y: auto; }
+    .stock-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .stock-item:last-child { border-bottom: none; }
+    .stock-name { font-weight: 600; }
+    .stock-quantity {
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 99px;
+      background-color: #e9ecef;
+    }
+    .stock-quantity.low { background-color: #fff3cd; color: #664d03; }
+    .stock-quantity.critical { background-color: #f8d7da; color: #842029; }
+    .table-container { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      white-space: nowrap;
+    }
+    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+    th { background-color: var(--light-bg); font-weight: 600; }
+    .badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-inward { background-color: #d1e7dd; color: #0f5132; }
+    .badge-outward { background-color: #f8d7da; color: #842029; }
+    .badge-delete { background-color: #fff3cd; color: #664d03; }
+    .empty-state { text-align: center; padding: 2rem; color: var(--text-light); }
+  </style>
+</head>
 <body>
   <div class="container">
-    <h2>📊 Tasktel MS - Logs & Current Stock</h2>
+    <header class="header">
+      <h1>Logs & Current Stock</h1>
+      <p>View transaction history and current inventory levels.</p>
+    </header>
     
     <div class="section">
-      <h3>📦 Current Stock</h3>
-      <div class="stock-controls">
-        <input type="text" id="stockSearch" placeholder="Search by Product Name..." title="Search current stock" />
+      <div class="section-header">
+        <h2>📦 Current Stock</h2>
+      </div>
+      <div class="controls">
+        <input type="text" id="stockSearch" placeholder="Search by Product Name...">
       </div>
       <div class="stock-container" id="stockContainer">
-        </div>
+        <div class="empty-state">Loading stock...</div>
+      </div>
     </div>
     
     <div class="section">
-      <h3>📋 Transaction History</h3>
+      <div class="section-header">
+        <h2>📋 Transaction History</h2>
+      </div>
       <div class="controls">
-        <input type="date" id="logDate" title="Filter by date" />
-        <input type="text" id="searchBox" placeholder="Search Name, Person, DC, Serial..." title="Search in logs" />
-        <button onclick="filterLogs()">🔍 Search Logs</button>
-        <button onclick="goBack()" class="back-btn">🔙 Back to Dashboard</button>
+        <input type="date" id="logDate" title="Filter by date">
+        <input type="text" id="searchBox" placeholder="Search Name, Person, DC, etc.">
+        <button onclick="filterLogs()" class="btn">🔍 Search</button>
+        <button onclick="goBack()" class="btn btn-secondary">🔙 Back to Dashboard</button>
       </div>
       <div class="table-container">
         <table>
@@ -30,12 +148,13 @@
               <th>Date</th>
               <th>DC No.</th>
               <th>Serial No.</th>
-              <th>Customer Name & Address</th>
+              <th>Customer Details</th>
               <th>Timestamp</th>
             </tr>
           </thead>
           <tbody id="logsBody">
-            </tbody>
+            <tr><td colspan="9" class="empty-state">Loading logs...</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
@@ -58,9 +177,12 @@
       }
       loadCurrentStock();
       loadAllLogs();
+      
+      document.getElementById('stockSearch').addEventListener('input', () => displayStock(allStock));
+      document.getElementById('searchBox').addEventListener('input', filterLogs);
+      document.getElementById('logDate').addEventListener('change', filterLogs);
     };
     
-    // Load and display current stock
     function loadCurrentStock() {
       firebase.database().ref("products").orderByKey().once("value", snapshot => {
         allStock = [];
@@ -70,37 +192,36 @@
           });
         }
         displayStock(allStock);
-        document.getElementById('stockSearch').addEventListener('input', () => displayStock(allStock));
       });
     }
 
     function displayStock(stockData) {
       const searchTerm = document.getElementById('stockSearch').value.toLowerCase();
-      const filteredStock = stockData.filter(item => item.name.toLowerCase().includes(searchTerm));
+      const filteredStock = searchTerm 
+        ? stockData.filter(item => item.name.toLowerCase().includes(searchTerm))
+        : stockData;
       
       if (filteredStock.length === 0) {
-        stockContainer.innerHTML = '<div class="stock-empty-state">No stock items found.</div>';
+        stockContainer.innerHTML = '<div class="empty-state">No stock items found.</div>';
         return;
       }
       
       let stockHTML = '';
       filteredStock.forEach(item => {
-        let quantityClass = item.quantity <= 5 ? 'stock-quantity low' : 'stock-quantity';
-        if (item.quantity === 0) quantityClass = 'stock-quantity critical';
+        let quantityClass = 'stock-quantity';
+        if (item.quantity <= 0) quantityClass += ' critical';
+        else if (item.quantity <= 5) quantityClass += ' low';
 
         stockHTML += `
           <div class="stock-item">
-            <div class="stock-details">
-              <div class="stock-name">${item.name}</div>
-            </div>
-            <div class="${quantityClass}">${item.quantity}</div>
+            <span class="stock-name">${item.name}</span>
+            <span class="${quantityClass}">${item.quantity}</span>
           </div>
         `;
       });
       stockContainer.innerHTML = stockHTML;
     }
 
-    // Load and display transaction logs
     function loadAllLogs() {
       firebase.database().ref("logs").once("value", snapshot => {
         allLogs = [];
@@ -109,7 +230,6 @@
             allLogs.push(child.val());
           });
         }
-        // Sort newest first
         allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         displayLogs(allLogs);
       });
@@ -119,48 +239,44 @@
         const selectedDate = document.getElementById("logDate").value;
         const searchTerm = document.getElementById("searchBox").value.toLowerCase().trim();
         
-        let filtered = allLogs.filter(log => {
+        const filtered = allLogs.filter(log => {
             const dateMatch = !selectedDate || log.date === selectedDate;
             const searchMatch = !searchTerm ||
-                (log.name && log.name.toLowerCase().includes(searchTerm)) ||
-                (log.person && log.person.toLowerCase().includes(searchTerm)) ||
-                (log.dcNo && log.dcNo.toLowerCase().includes(searchTerm)) ||
-                (log.serialNumber && log.serialNumber.toLowerCase().includes(searchTerm)) ||
-                (log.customerDetails && log.customerDetails.toLowerCase().includes(searchTerm));
-            
+                Object.values(log).some(val => 
+                    String(val).toLowerCase().includes(searchTerm)
+                );
             return dateMatch && searchMatch;
         });
-        
         displayLogs(filtered);
     }
 
     function displayLogs(logs) {
       if (logs.length === 0) {
-        logsBody.innerHTML = '<tr><td colspan="9" class="empty-state">No logs found matching criteria.</td></tr>';
+        logsBody.innerHTML = '<tr><td colspan="9" class="empty-state">No logs found.</td></tr>';
         return;
       }
       
-      let logsHTML = '';
-      logs.forEach(log => {
+      logsBody.innerHTML = logs.map(log => {
         let badgeClass = 'badge-inward';
         if (log.type === 'OUTWARD') badgeClass = 'badge-outward';
         if (log.type === 'DELETE') badgeClass = 'badge-delete';
 
-        logsHTML += `
+        const escape = (str) => String(str || '-').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[s]);
+
+        return `
           <tr>
-            <td><span class="badge ${badgeClass}">${log.type}</span></td>
-            <td><strong>${log.name || '-'}</strong></td>
-            <td><strong>${log.quantity || '-'}</strong></td>
-            <td>${log.person || '-'}</td>
-            <td class="date-cell">${log.date || '-'}</td>
-            <td>${log.dcNo || '-'}</td>
-            <td>${log.serialNumber || '-'}</td>
-            <td class="comment-cell">${log.customerDetails || '-'}</td>
-            <td class="date-cell">${log.timestamp || '-'}</td>
+            <td><span class="badge ${badgeClass}">${escape(log.type)}</span></td>
+            <td><strong>${escape(log.name)}</strong></td>
+            <td><strong>${escape(log.quantity)}</strong></td>
+            <td>${escape(log.person)}</td>
+            <td>${escape(log.date)}</td>
+            <td>${escape(log.dcNo)}</td>
+            <td>${escape(log.serialNumber)}</td>
+            <td>${escape(log.customerDetails)}</td>
+            <td>${escape(log.timestamp)}</td>
           </tr>
         `;
-      });
-      logsBody.innerHTML = logsHTML;
+      }).join('');
     }
 
     function goBack() {
@@ -168,3 +284,4 @@
     }
   </script>
 </body>
+</html>
