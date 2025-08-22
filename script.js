@@ -1,524 +1,183 @@
-// script.js - TASKTEL MS COMPLETE VERSION WITH STOCK DISPLAY SUPPORT
-let productMap = {}; // For syncing and suggestions
-window.stockData = {}; // Global stock data for dropdown
+// script.js - TASKTEL MS DEMO/SERVICE STOCK VERSION
+let productMap = {}; // Maps product names to their data
 
 // Load all products into productMap and <datalist> suggestions
 function loadProductData() {
   firebase.database().ref("products").once("value", snapshot => {
     productMap = {};
-    window.stockData = {}; // Update global stock data
-    
-    // Clear existing datalists
-    const skuList = document.getElementById("skuList");
     const nameList = document.getElementById("nameList");
-    const outList = document.getElementById("outList");
-    const deleteList = document.getElementById("deleteList");
-    
-    if (skuList) skuList.innerHTML = "";
     if (nameList) nameList.innerHTML = "";
-    if (outList) outList.innerHTML = "";
-    if (deleteList) deleteList.innerHTML = "";
     
     let productCount = 0;
     
     snapshot.forEach(child => {
-      const sku = child.key;
+      const productName = child.key; // Product name is now the key
       const data = child.val();
-      if (data && data.name && typeof data.quantity === 'number') {
-        const { name, quantity } = data;
-        productMap[sku] = { name, quantity };
-        window.stockData[sku] = { name, quantity };
+      if (data && typeof data.quantity === 'number') {
+        productMap[productName] = { quantity: data.quantity };
         productCount++;
         
-        // Add to datalists with proper HTML escaping
-        const escapedSku = sku.replace(/"/g, "&quot;");
-        const escapedName = name.replace(/"/g, "&quot;");
-        
-        if (skuList) {
-          skuList.innerHTML += `<option value="${escapedSku}"></option>`;
-        }
+        const escapedName = productName.replace(/"/g, "&quot;");
         if (nameList) {
           nameList.innerHTML += `<option value="${escapedName}"></option>`;
-        }
-        if (outList) {
-          outList.innerHTML += `<option value="${escapedSku}"></option>`;
-          outList.innerHTML += `<option value="${escapedName}"></option>`;
-          outList.innerHTML += `<option value="${escapedSku} (${escapedName})"></option>`;
-        }
-        if (deleteList) {
-          deleteList.innerHTML += `<option value="${escapedSku}"></option>`;
-          deleteList.innerHTML += `<option value="${escapedName}"></option>`;
-          deleteList.innerHTML += `<option value="${escapedSku} (${escapedName})"></option>`;
         }
       }
     });
     
     console.log("Product data loaded:", productCount, "products");
-    console.log("ProductMap:", productMap);
-    
-    // Call updateStockDisplay if it exists (for compatibility)
-    if (typeof updateStockDisplay === 'function') {
-      updateStockDisplay();
-    }
   }).catch(error => {
     console.error("Error loading product data:", error);
-    if (typeof showAlert === 'function') {
-      showAlert("Error loading product data. Please refresh the page.", "error");
-    } else {
-      alert("Error loading product data. Please refresh the page.");
-    }
-  });
-}
-
-// DELETE PRODUCT FUNCTION
-function deleteProduct() {
-  const input = document.getElementById("delete-product").value.trim();
-  const comment = document.getElementById("delete-comment").value.trim();
-  
-  if (!input) {
-    if (typeof showAlert === 'function') {
-      showAlert("Please enter a product SKU or name to delete.", "error");
-    } else {
-      alert("Please enter a product SKU or name to delete.");
-    }
-    return;
-  }
-  
-  if (!confirm(`⚠️ Are you sure you want to delete "${input}"?\n\nThis action cannot be undone and will permanently remove the product from inventory.`)) {
-    return;
-  }
-  
-  console.log("Searching for product to delete:", input);
-  
-  firebase.database().ref("products").once("value", snapshot => {
-    let matchedKey = null;
-    let matchedName = null;
-    let matchedQuantity = 0;
-    let allProducts = [];
-    
-    snapshot.forEach(child => {
-      const sku = child.key;
-      const data = child.val();
-      
-      if (data && data.name && typeof data.quantity === 'number') {
-        const { name, quantity } = data;
-        allProducts.push({ sku, name, quantity });
-        
-        // Clean inputs for comparison
-        const inputClean = input.toLowerCase().trim();
-        const skuClean = sku.toLowerCase().trim();
-        const nameClean = name.toLowerCase().trim();
-        
-        // Multiple matching patterns
-        let isMatch = false;
-        
-        // 1. Exact SKU match
-        if (inputClean === skuClean) {
-          isMatch = true;
-          console.log("Matched by SKU");
-        }
-        
-        // 2. Exact name match
-        if (inputClean === nameClean) {
-          isMatch = true;
-          console.log("Matched by name");
-        }
-        
-        // 3. Format: "SKU (Name)"
-        const combinedFormat = `${skuClean} (${nameClean})`;
-        if (inputClean === combinedFormat) {
-          isMatch = true;
-          console.log("Matched by combined format");
-        }
-        
-        if (isMatch && !matchedKey) { // Take first match
-          matchedKey = sku;
-          matchedName = name;
-          matchedQuantity = quantity;
-          console.log("Match found:", { sku, name, quantity });
-        }
-      }
-    });
-    
-    if (!matchedKey) {
-      const availableProducts = allProducts.map(p => `${p.sku} - ${p.name} (Qty: ${p.quantity})`).join('\n');
-      if (typeof showAlert === 'function') {
-        showAlert(`Product "${input}" not found!`, "error");
-      } else {
-        alert(`Product not found!\n\nInput: "${input}"\n\nAvailable products:\n${availableProducts}`);
-      }
-      return;
-    }
-    
-    // Delete the product
-    const ref = firebase.database().ref("products/" + matchedKey);
-    ref.remove()
-      .then(() => {
-        console.log("Product deleted successfully");
-        logTransaction("DELETE", matchedKey, matchedName, matchedQuantity, "System", "-", comment, getCurrentDate());
-        
-        if (typeof showAlert === 'function') {
-          showAlert(`Successfully deleted ${matchedName} (${matchedKey}) from inventory.`, "success");
-        } else {
-          alert(`Successfully deleted ${matchedName} (${matchedKey}) from inventory.`);
-        }
-        
-        // Clear form and reload data
-        clearDeleteFields();
-        loadProductData();
-        loadStock();
-      })
-      .catch(error => {
-        console.error("Error deleting product:", error);
-        if (typeof showAlert === 'function') {
-          showAlert("Error deleting product. Please try again.", "error");
-        } else {
-          alert("Error deleting product. Please try again.");
-        }
-      });
-  }).catch(error => {
-    console.error("Firebase error:", error);
-    if (typeof showAlert === 'function') {
-      showAlert("Error connecting to database. Please try again.", "error");
-    } else {
-      alert("Error connecting to database. Please try again.");
-    }
+    showAlert("Error loading product data. Please refresh.", "error");
   });
 }
 
 // INWARD STOCK FUNCTION (Add/Update)
 function inwardStock() {
-  const sku = document.getElementById("sku").value.trim();
   const name = document.getElementById("name").value.trim();
   const qty = parseInt(document.getElementById("quantity").value);
   const receiver = document.getElementById("receiver").value.trim();
-  const comment = document.getElementById("inward-comment") ? document.getElementById("inward-comment").value.trim() : "";
-  const entryDate = document.getElementById("entry-date") ? document.getElementById("entry-date").value : getCurrentDate();
-  
-  if (!sku || !name || isNaN(qty) || qty <= 0 || !receiver) {
-    if (typeof showAlert === 'function') {
-      showAlert("Please fill all required fields correctly.", "error");
-    } else {
-      alert("Please fill all required fields correctly.");
-    }
+  const entryDate = document.getElementById("entry-date").value;
+  const serialNumber = document.getElementById("inward-serial").value.trim();
+  const customerDetails = document.getElementById("inward-customer").value.trim();
+
+  if (!name || isNaN(qty) || qty <= 0 || !receiver) {
+    showAlert("Please fill Product Name, Quantity, and Received By fields.", "error");
     return;
   }
-  
-  const ref = firebase.database().ref("products/" + sku);
-  ref.once("value", snapshot => {
-    const existing = snapshot.val();
-    const newQty = existing ? (existing.quantity + qty) : qty;
-    ref.set({ name, quantity: newQty });
-    logTransaction("INWARD", sku, name, qty, "-", receiver, comment, entryDate);
-    
-    if (typeof showAlert === 'function') {
-      showAlert(`Successfully added ${qty} units of ${name}. Total stock: ${newQty}`, "success");
+
+  const ref = firebase.database().ref("products/" + name); // Use name as the key
+  ref.transaction(currentData => {
+    if (currentData === null) {
+      return { quantity: qty };
     } else {
-      alert(`Successfully added ${qty} units of ${name}`);
+      return { quantity: currentData.quantity + qty };
     }
-    
-    loadProductData();
-    loadStock();
-    clearFields();
-  }).catch(error => {
-    console.error("Error in inward stock:", error);
-    if (typeof showAlert === 'function') {
+  }, (error, committed, snapshot) => {
+    if (error) {
       showAlert("Error adding stock. Please try again.", "error");
-    } else {
-      alert("Error adding stock. Please try again.");
+    } else if (committed) {
+      const newTotal = snapshot.val().quantity;
+      logTransaction("INWARD", name, qty, "-", receiver, entryDate, "-", serialNumber, customerDetails);
+      showAlert(`Successfully added ${qty} units of ${name}. Total stock: ${newTotal}`, "success");
+      loadProductData();
+      clearFields();
     }
   });
 }
 
 // OUTWARD STOCK FUNCTION (Remove)
 function outwardStock() {
-  console.log("outwardStock function called");
-  
-  const input = document.getElementById("out-sku-or-name").value.trim();
+  const name = document.getElementById("out-name").value.trim();
   const qty = parseInt(document.getElementById("out-qty").value);
   const person = document.getElementById("out-person").value.trim();
-  const comment = document.getElementById("outward-comment") ? document.getElementById("outward-comment").value.trim() : "";
-  
-  if (!input || isNaN(qty) || qty <= 0 || !person) {
-    if (typeof showAlert === 'function') {
-      showAlert("Please fill all required fields correctly.", "error");
-    } else {
-      alert("Please fill all required fields correctly.");
-    }
+  const outwardDate = document.getElementById("outward-date").value;
+  const dcNo = document.getElementById("out-dc").value.trim();
+  const serialNumber = document.getElementById("outward-serial").value.trim();
+  const customerDetails = document.getElementById("outward-customer").value.trim();
+
+  if (!name || isNaN(qty) || qty <= 0 || !person || !customerDetails) {
+    showAlert("Please fill all fields: Product Name, Quantity, Taken By, and Customer Details.", "error");
     return;
   }
-  
-  console.log("Searching for:", input);
-  
-  // Check Firebase connection first
-  if (typeof firebase === 'undefined') {
-    if (typeof showAlert === 'function') {
-      showAlert("Firebase is not loaded. Please refresh the page.", "error");
-    } else {
-      alert("Firebase is not loaded. Please refresh the page.");
+
+  const ref = firebase.database().ref("products/" + name); // Use name as the key
+  ref.transaction(currentData => {
+    if (currentData === null) {
+      showAlert(`Product "${name}" not found in inventory.`, "error");
+      return; // Abort transaction
     }
-    return;
-  }
-  
-  firebase.database().ref("products").once("value", snapshot => {
-    let matchedKey = null;
-    let matchedName = null;
-    let matchedQuantity = 0;
-    let allProducts = [];
-    
-    console.log("Firebase snapshot received");
-    
-    snapshot.forEach(child => {
-      const sku = child.key;
-      const data = child.val();
-      
-      if (data && data.name && typeof data.quantity === 'number') {
-        const { name, quantity } = data;
-        allProducts.push({ sku, name, quantity });
-        
-        // Clean inputs for comparison
-        const inputClean = input.toLowerCase().trim();
-        const skuClean = sku.toLowerCase().trim();
-        const nameClean = name.toLowerCase().trim();
-        
-        // Multiple matching patterns
-        let isMatch = false;
-        
-        // 1. Exact SKU match
-        if (inputClean === skuClean) {
-          isMatch = true;
-          console.log("Matched by SKU");
-        }
-        
-        // 2. Exact name match
-        if (inputClean === nameClean) {
-          isMatch = true;
-          console.log("Matched by name");
-        }
-        
-        // 3. Format: "SKU (Name)"
-        const combinedFormat = `${skuClean} (${nameClean})`;
-        if (inputClean === combinedFormat) {
-          isMatch = true;
-          console.log("Matched by combined format");
-        }
-        
-        // 4. Input starts with SKU
-        if (inputClean.startsWith(skuClean)) {
-          isMatch = true;
-          console.log("Matched by SKU prefix");
-        }
-        
-        // 5. Input contains name
-        if (inputClean.includes(nameClean) || nameClean.includes(inputClean)) {
-          isMatch = true;
-          console.log("Matched by name contains");
-        }
-        
-        if (isMatch && !matchedKey) { // Take first match
-          matchedKey = sku;
-          matchedName = name;
-          matchedQuantity = quantity;
-          console.log("Match found:", { sku, name, quantity });
-        }
-      }
-    });
-    
-    console.log("All products:", allProducts);
-    console.log("Match result:", { matchedKey, matchedName, matchedQuantity });
-    
-    if (!matchedKey) {
-      const availableProducts = allProducts.map(p => `${p.sku} - ${p.name} (Qty: ${p.quantity})`).join('\n');
-      if (typeof showAlert === 'function') {
-        showAlert(`Product "${input}" not found!`, "error");
-      } else {
-        alert(`Product not found!\n\nInput: "${input}"\n\nAvailable products:\n${availableProducts}`);
-      }
-      return;
+    if (currentData.quantity < qty) {
+      showAlert(`Not enough stock! Available: ${currentData.quantity}, Requested: ${qty}`, "error");
+      return; // Abort transaction
     }
-    
-    // Check if enough stock available
-    if (matchedQuantity < qty) {
-      if (typeof showAlert === 'function') {
-        showAlert(`Not enough stock! Available: ${matchedQuantity}, Requested: ${qty}`, "error");
-      } else {
-        alert(`Not enough stock!\nAvailable: ${matchedQuantity}\nRequested: ${qty}`);
-      }
-      return;
-    }
-    
-    // Remove stock
-    const ref = firebase.database().ref("products/" + matchedKey);
-    const newQty = matchedQuantity - qty;
-    
-    if (newQty <= 0) {
-      // Remove product completely if quantity becomes 0
-      ref.remove()
-        .then(() => {
-          console.log("Product removed completely");
-          logTransaction("OUTWARD", matchedKey, matchedName, qty, person, "-", comment, getCurrentDate());
-          
-          if (typeof showAlert === 'function') {
-            showAlert(`Successfully removed ${qty} units of ${matchedName}. Product removed from inventory (quantity reached 0).`, "success");
-          } else {
-            alert(`Successfully removed ${qty} units of ${matchedName}.\nProduct removed from inventory (quantity reached 0).`);
-          }
-          
-          loadProductData();
-          loadStock();
-          clearOutwardFields();
-        })
-        .catch(error => {
-          console.error("Error removing product:", error);
-          if (typeof showAlert === 'function') {
-            showAlert("Error removing product. Please try again.", "error");
-          } else {
-            alert("Error removing product. Please try again.");
-          }
-        });
-    } else {
-      // Update quantity
-      ref.update({ quantity: newQty })
-        .then(() => {
-          console.log("Stock updated:", { oldQty: matchedQuantity, newQty });
-          logTransaction("OUTWARD", matchedKey, matchedName, qty, person, "-", comment, getCurrentDate());
-          
-          if (typeof showAlert === 'function') {
-            showAlert(`Successfully removed ${qty} units of ${matchedName}. Remaining stock: ${newQty}`, "success");
-          } else {
-            alert(`Successfully removed ${qty} units of ${matchedName}.\nRemaining stock: ${newQty}`);
-          }
-          
-          loadProductData();
-          loadStock();
-          clearOutwardFields();
-        })
-        .catch(error => {
-          console.error("Error updating stock:", error);
-          if (typeof showAlert === 'function') {
-            showAlert("Error updating stock. Please try again.", "error");
-          } else {
-            alert("Error updating stock. Please try again.");
-          }
-        });
-    }
-    
-  }).catch(error => {
-    console.error("Firebase error:", error);
-    if (typeof showAlert === 'function') {
-      showAlert("Error connecting to database. Please try again.", "error");
-    } else {
-      alert("Error connecting to database. Please try again.");
+    const newQty = currentData.quantity - qty;
+    // If quantity becomes 0 or less, remove the product
+    return newQty > 0 ? { quantity: newQty } : null;
+  }, (error, committed, snapshot) => {
+    if (error) {
+      showAlert("Error removing stock. Please try again.", "error");
+    } else if (committed) {
+      const remainingQty = snapshot.val() ? snapshot.val().quantity : 0;
+      logTransaction("OUTWARD", name, qty, person, "-", outwardDate, dcNo, serialNumber, customerDetails);
+      showAlert(`Successfully removed ${qty} of ${name}. Remaining stock: ${remainingQty}`, "success");
+      loadProductData();
+      clearOutwardFields();
     }
   });
 }
 
-// Sync SKU ↔ Name when user types one of them
-function syncSKUName(field) {
-  const skuInput = document.getElementById("sku");
-  const nameInput = document.getElementById("name");
-  
-  if (!skuInput || !nameInput) return; // Safety check
-  
-  if (field === "sku") {
-    const sku = skuInput.value.trim();
-    if (productMap[sku] && productMap[sku].name) {
-      nameInput.value = productMap[sku].name;
+// DELETE PRODUCT FUNCTION
+function deleteProduct() {
+    const name = document.getElementById("delete-product").value.trim();
+    const reason = document.getElementById("delete-comment").value.trim();
+
+    if (!name) {
+        showAlert("Please enter a product name to delete.", "error");
+        return;
     }
-  } else if (field === "name") {
-    const name = nameInput.value.trim();
-    if (!name) return; // Don't process empty names
-    
-    const nameLower = name.toLowerCase();
-    for (const sku in productMap) {
-      if (productMap[sku] && productMap[sku].name && 
-          productMap[sku].name.toLowerCase() === nameLower) {
-        skuInput.value = sku;
-        break;
-      }
+
+    if (!confirm(`⚠️ Are you sure you want to delete "${name}"? This is permanent.`)) {
+        return;
     }
-  }
+
+    const ref = firebase.database().ref("products/" + name);
+    ref.once("value", snapshot => {
+        if (!snapshot.exists()) {
+            showAlert(`Product "${name}" not found.`, "error");
+            return;
+        }
+        
+        const originalQty = snapshot.val().quantity || 0;
+
+        ref.remove().then(() => {
+            logTransaction("DELETE", name, originalQty, "System", "-", getCurrentDate(), "-", "N/A", reason);
+            showAlert(`Successfully deleted ${name} from inventory.`, "success");
+            loadProductData();
+            document.getElementById("delete-product").value = "";
+            document.getElementById("delete-comment").value = "";
+        }).catch(error => {
+            showAlert("Error deleting product.", "error");
+            console.error("Delete error:", error);
+        });
+    });
 }
 
-// Load stock (works with both index.html and logs.html)
-function loadStock() {
-  firebase.database().ref("products").once("value", snapshot => {
-    window.stockData = {}; // Reset global stock data
-    snapshot.forEach(child => {
-      const sku = child.key;
-      const data = child.val();
-      if (data && data.name && typeof data.quantity === 'number') {
-        const { name, quantity } = data;
-        window.stockData[sku] = { name, quantity };
-      }
-    });
-    
-    console.log("Stock data loaded:", Object.keys(window.stockData).length, "products");
-    
-    // If we're on logs.html page, refresh the stock display
-    if (typeof loadCurrentStock === 'function') {
-      loadCurrentStock();
-    }
-  }).catch(error => {
-    console.error("Error loading stock:", error);
-    if (typeof showAlert === 'function') {
-      showAlert("Error loading stock data. Please try again.", "error");
-    }
-  });
-}
 
 // Log a transaction to Firebase
-function logTransaction(type, sku, name, quantity, takenBy, receiver, comment, entryDate) {
+function logTransaction(type, name, quantity, takenBy, receiver, date, dcNo, serialNumber, customerDetails) {
   const log = {
     type,
-    sku,
     name,
     quantity,
-    takenBy: takenBy || "-",
-    receiver: receiver || "-",
-    comment: comment || "-",
-    entryDate: entryDate || getCurrentDate(),
+    person: type === 'INWARD' ? receiver : takenBy,
+    date,
+    dcNo: dcNo || "-",
+    serialNumber: serialNumber || "-",
+    customerDetails: customerDetails || "-",
     timestamp: new Date().toLocaleString()
   };
-  firebase.database().ref("logs").push(log).catch(error => {
-    console.error("Error logging transaction:", error);
-  });
+  firebase.database().ref("logs").push(log);
 }
 
 // Clear inward fields
 function clearFields() {
-  ["sku", "name", "quantity", "receiver"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = "";
-  });
-  
-  // Clear comment and reset date
-  const commentEl = document.getElementById("inward-comment");
-  if (commentEl) commentEl.value = "";
-  
-  const dateEl = document.getElementById("entry-date");
-  if (dateEl) dateEl.valueAsDate = new Date();
+  document.getElementById("name").value = "";
+  document.getElementById("quantity").value = "";
+  document.getElementById("receiver").value = "";
+  document.getElementById("inward-serial").value = "";
+  document.getElementById("inward-customer").value = "";
+  document.getElementById('entry-date').valueAsDate = new Date();
 }
 
 // Clear outward fields
 function clearOutwardFields() {
-  ["out-sku-or-name", "out-qty", "out-person"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = "";
-  });
-  
-  // Clear comment
-  const commentEl = document.getElementById("outward-comment");
-  if (commentEl) commentEl.value = "";
-}
-
-// Clear delete fields
-function clearDeleteFields() {
-  const productEl = document.getElementById("delete-product");
-  const commentEl = document.getElementById("delete-comment");
-  
-  if (productEl) productEl.value = "";
-  if (commentEl) commentEl.value = "";
+  document.getElementById("out-name").value = "";
+  document.getElementById("out-qty").value = "";
+  document.getElementById("out-person").value = "";
+  document.getElementById("out-dc").value = "";
+  document.getElementById("outward-serial").value = "";
+  document.getElementById("outward-customer").value = "";
+  document.getElementById('outward-date').valueAsDate = new Date();
 }
 
 // Get current date in YYYY-MM-DD format
@@ -529,12 +188,11 @@ function getCurrentDate() {
 // Export CSV function
 function exportCSV() {
   firebase.database().ref("logs").once("value", snapshot => {
-    let csvContent = "Type,SKU,Name,Quantity,Taken By,Receiver,Entry Date,Comments,Timestamp\n";
+    let csvContent = "Type,Product Name,Quantity,Person,Date,DC No,Serial Number,Customer Details,Timestamp\n";
     snapshot.forEach(child => {
       const log = child.val();
-      // Escape commas and quotes in CSV data
       const escapeCSV = (str) => {
-        if (str === null || str === undefined) return '"-"';
+        if (str === null || str === undefined) return '""';
         str = String(str);
         if (str.includes(',') || str.includes('"') || str.includes('\n')) {
           return '"' + str.replace(/"/g, '""') + '"';
@@ -542,88 +200,28 @@ function exportCSV() {
         return str;
       };
       
-      csvContent += `${escapeCSV(log.type)},${escapeCSV(log.sku)},${escapeCSV(log.name)},${escapeCSV(log.quantity)},${escapeCSV(log.takenBy || "-")},${escapeCSV(log.receiver || "-")},${escapeCSV(log.entryDate || "-")},${escapeCSV(log.comment || "-")},${escapeCSV(log.timestamp)}\n`;
+      csvContent += `${escapeCSV(log.type)},${escapeCSV(log.name)},${escapeCSV(log.quantity)},${escapeCSV(log.person)},${escapeCSV(log.date)},${escapeCSV(log.dcNo)},${escapeCSV(log.serialNumber)},${escapeCSV(log.customerDetails)},${escapeCSV(log.timestamp)}\n`;
     });
     
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `tasktel_ms_logs_${getCurrentDate()}.csv`;
     a.click();
-    window.URL.revokeObjectURL(url);
+    URL.revokeObjectURL(url);
     
-    if (typeof showAlert === 'function') {
-      showAlert("CSV file exported successfully!", "success");
-    } else {
-      alert("CSV file exported successfully!");
-    }
+    showAlert("CSV file exported successfully!", "success");
   }).catch(error => {
-    console.error("Error exporting CSV:", error);
-    if (typeof showAlert === 'function') {
-      showAlert("Error exporting CSV. Please try again.", "error");
-    } else {
-      alert("Error exporting CSV. Please try again.");
-    }
+    showAlert("Error exporting CSV.", "error");
   });
-}
-
-// FUNCTIONS FOR LOGS.HTML STOCK DISPLAY COMPATIBILITY
-// These functions are called from logs.html for stock management
-
-// Load current stock for logs.html page
-function loadCurrentStock() {
-  // This function is defined in logs.html script section
-  // Just ensure our global stockData is available
-  console.log("loadCurrentStock called - ensuring stock data is available");
-  
-  if (Object.keys(window.stockData).length === 0) {
-    console.log("No stock data available, loading from Firebase...");
-    loadStock();
-  }
-}
-
-// Refresh stock for logs.html page
-function refreshStock() {
-  console.log("refreshStock called from logs.html");
-  loadStock();
 }
 
 // Initialize when page loads
 window.addEventListener('load', function() {
-  console.log("Tasktel MS - Page loaded, initializing...");
-  
-  // Check if Firebase is loaded
   if (typeof firebase === 'undefined') {
-    console.error("Firebase not loaded!");
-    if (typeof showAlert === 'function') {
-      showAlert("Firebase not loaded. Please check your internet connection and refresh the page.", "error");
-    } else {
-      alert("Firebase not loaded. Please check your internet connection and refresh the page.");
-    }
+    showAlert("Firebase not loaded. Please check your internet connection.", "error");
     return;
   }
-  
-  console.log("Firebase loaded successfully");
   loadProductData();
-  loadStock();
 });
-
-// Backup initialization if window.onload doesn't work
-document.addEventListener('DOMContentLoaded', function() {
-  console.log("Tasktel MS - DOM loaded");
-  if (typeof firebase !== 'undefined') {
-    loadProductData();
-    loadStock();
-  }
-});
-
-// Test function for debugging
-function testRemoveButton() {
-  console.log("Tasktel MS - Test function called");
-  if (typeof showAlert === 'function') {
-    showAlert("Remove button is working!", "success");
-  } else {
-    alert("Remove button is working!");
-  }
-}
