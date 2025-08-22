@@ -1,4 +1,4 @@
-// script.js - TASKTEL MS DEMO/SERVICE STOCK VERSION (v3.2 - Robust Matching Fix)
+// script.js - TASKTEL MS DEMO/SERVICE STOCK VERSION (v3.3 - Definitive Fix)
 let productMap = {}; // Maps product names to their data
 
 // Load all products into productMap and <datalist> suggestions
@@ -65,74 +65,75 @@ function inwardStock() {
   });
 }
 
-// OUTWARD STOCK FUNCTION (Remove) - REWRITTEN FOR RELIABILITY
+// OUTWARD STOCK FUNCTION (Remove) - DEFINITIVE FIX
 function outwardStock() {
-  const nameInput = document.getElementById("out-name").value;
+  const nameInput = document.getElementById("out-name").value.trim();
   const qty = parseInt(document.getElementById("out-qty").value);
+
+  if (!nameInput || isNaN(qty) || qty <= 0) {
+    showAlert("Please select a product and enter a valid quantity.", "error");
+    return;
+  }
+  
   const person = document.getElementById("out-person").value.trim();
   const outwardDate = document.getElementById("outward-date").value;
   const dcNo = document.getElementById("out-dc").value.trim();
   const serialNumber = document.getElementById("outward-serial").value.trim();
   const customerDetails = document.getElementById("outward-customer").value.trim();
 
-  if (!nameInput || isNaN(qty) || qty <= 0 || !person || !customerDetails) {
-    showAlert("Please fill all required fields: Product Name, Quantity, Taken By, and Customer Details.", "error");
+  if (!person || !customerDetails) {
+    showAlert("Please fill all required fields: Taken By and Customer Details.", "error");
     return;
   }
 
-  // First, find the exact key of the product, ignoring case and trimming whitespace for user-friendliness.
-  firebase.database().ref("products").once("value", snapshot => {
-    let matchedKey = null;
-    const cleanedNameInput = nameInput.trim().toLowerCase(); // Clean the input once
+  // Use the exact name from the input to reference the product in the database.
+  // This is reliable when using a datalist.
+  const ref = firebase.database().ref("products/" + nameInput);
 
-    snapshot.forEach(child => {
-      const cleanedKey = child.key.trim().toLowerCase(); // Clean the database key for comparison
-      if (cleanedKey === cleanedNameInput) {
-        matchedKey = child.key; // Store the original, correctly-cased key
-      }
-    });
-
-    if (!matchedKey) {
-      showAlert(`Product "${nameInput}" not found in inventory. Please select a valid product from the list.`, "error");
-      console.log(`Failed match. Input was: "${cleanedNameInput}". Checked against database keys.`);
-      return;
+  ref.transaction(currentData => {
+    if (currentData === null) {
+      // If the direct lookup fails, it means the product doesn't exist under that exact name.
+      // We return a special value to indicate this specific failure.
+      return { abortReason: "not_found" };
     }
-
-    // Now, perform the atomic transaction using the correct key.
-    const ref = firebase.database().ref("products/" + matchedKey);
-    ref.transaction(currentData => {
-      if (currentData === null) {
-        return 0; // Abort: Product was deleted by another user.
-      }
-      if (currentData.quantity < qty) {
-        return; // Abort: Not enough stock. Return undefined.
-      }
-      const newQty = currentData.quantity - qty;
-      return newQty > 0 ? { quantity: newQty } : null; // Return new value or null to delete the product node.
-    }, (error, committed, snapshot) => {
-      if (error) {
-        showAlert("A database error occurred. Please try again.", "error");
-        console.error("Transaction failed: ", error);
-      } else if (!committed) {
-        ref.once("value", currentSnapshot => {
-            const currentQty = currentSnapshot.exists() ? currentSnapshot.val().quantity : 0;
-            if (currentQty < qty) {
-                showAlert(`Transaction failed: Not enough stock for ${matchedKey}. Available: ${currentQty}, Requested: ${qty}`, "error");
-            } else {
-                showAlert(`Transaction failed. The product might have been modified. Please try again.`, "error");
-            }
-        });
-      } else {
-        const remainingQty = snapshot.exists() ? snapshot.val().quantity : 0;
-        logTransaction("OUTWARD", matchedKey, qty, person, "-", outwardDate, dcNo, serialNumber, customerDetails);
-        showAlert(`Successfully removed ${qty} of ${matchedKey}. Remaining stock: ${remainingQty}`, "success");
-        loadProductData();
-        clearOutwardFields();
-      }
-    });
-  }).catch(err => {
-      showAlert("Could not connect to the database to verify product.", "error");
-      console.error(err);
+    if (currentData.quantity < qty) {
+      // Not enough stock, abort.
+      return { abortReason: "insufficient_stock", available: currentData.quantity };
+    }
+    const newQty = currentData.quantity - qty;
+    // Return the new value, or null to delete the product if stock is zero.
+    return newQty > 0 ? { quantity: newQty } : null;
+  }, (error, committed, snapshot) => {
+    if (error) {
+      showAlert("A database error occurred. Please try again.", "error");
+      console.error("Transaction failed:", error);
+    } else if (!committed) {
+      // The transaction was aborted by our logic.
+      // We check the `abortReason` we set.
+      ref.once('value', (snap) => {
+        const data = snap.val();
+        if (data && data.abortReason) {
+          if (data.abortReason === "not_found") {
+            showAlert(`Product "${nameInput}" not found. Please select a valid product from the list.`, "error");
+          } else if (data.abortReason === "insufficient_stock") {
+            showAlert(`Transaction failed: Not enough stock for ${nameInput}. Available: ${data.available}, Requested: ${qty}`, "error");
+          }
+          // Clean up the abort reason from the database
+          ref.child('abortReason').remove();
+          if(data.available) ref.child('available').remove();
+        } else {
+            // Fallback for other abort reasons (e.g. not enough stock from the initial check)
+            showAlert(`Transaction failed. Please check stock and try again.`, "error");
+        }
+      });
+    } else {
+      // The transaction was successful.
+      const remainingQty = snapshot.exists() ? snapshot.val().quantity : 0;
+      logTransaction("OUTWARD", nameInput, qty, person, "-", outwardDate, dcNo, serialNumber, customerDetails);
+      showAlert(`Successfully removed ${qty} of ${nameInput}. Remaining stock: ${remainingQty}`, "success");
+      loadProductData();
+      clearOutwardFields();
+    }
   });
 }
 
